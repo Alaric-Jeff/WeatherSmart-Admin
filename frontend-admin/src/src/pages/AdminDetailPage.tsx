@@ -1,0 +1,119 @@
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AdminLayout } from '../components/layout/AdminLayout';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useAdmins } from '../hooks/useAdmins';
+import { ArrowLeft, Shield, Ban, CheckCircle, Activity } from 'lucide-react';
+import { toast } from 'sonner';
+export function AdminDetailPage() {
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
+  const navigate = useNavigate();
+  const {
+    admins,
+    toggleAdminStatus
+  } = useAdmins();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const admin = admins.find(a => a.adminId === id);
+  if (!admin) {
+    return <AdminLayout title="Admin Not Found">
+        <div className="text-center py-12">
+          <Button onClick={() => navigate('/admins')}>Back to Admins</Button>
+        </div>
+      </AdminLayout>;
+  }
+  const handleToggleStatus = async () => {
+    setIsProcessing(true);
+    try {
+      await toggleAdminStatus(admin.adminId);
+      toast.success(`Admin account ${admin.status === 'active' ? 'disabled' : 'enabled'} successfully`);
+      setIsConfirmOpen(false);
+    } catch (error) {
+      toast.error('Failed to update admin status');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  return <AdminLayout title="Admin Details">
+      <div className="mb-6">
+        <Button variant="ghost" onClick={() => navigate('/admins')} leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          Back to Admins
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <div className="flex flex-col items-center text-center pb-6 border-b border-gray-100 mb-6">
+              <div className="h-24 w-24 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-3xl font-bold mb-4">
+                {admin.firstName.charAt(0)}
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {admin.firstName} {admin.lastName}
+              </h2>
+              <p className="text-sm text-gray-500 mb-2">{admin.email}</p>
+              <div className="flex gap-2 justify-center mt-2">
+                <Badge variant={admin.role === 'super-admin' ? 'primary' : 'neutral'}>
+                  {admin.role === 'super-admin' ? 'Super Admin' : 'Admin'}
+                </Badge>
+                <Badge variant={admin.status === 'active' ? 'success' : 'danger'}>
+                  {admin.status === 'active' ? 'Active' : 'Disabled'}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Admin ID</span>
+                <span className="font-mono text-gray-900">{admin.adminId}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Joined</span>
+                <span className="text-gray-900">
+                  {new Date(admin.createdDate).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Last Login</span>
+                <span className="text-gray-900">
+                  {new Date(admin.lastLogin).toLocaleDateString()}
+                </span>
+              </div>
+              {admin.phoneNumber && <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Phone</span>
+                  <span className="text-gray-900">{admin.phoneNumber}</span>
+                </div>}
+            </div>
+
+            <div className="mt-8">
+              <Button variant={admin.status === 'active' ? 'danger' : 'success' as any} className="w-full justify-start" onClick={() => setIsConfirmOpen(true)} leftIcon={admin.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />} disabled={admin.role === 'super-admin'} // Prevent disabling super admins for safety in MVP
+            >
+                {admin.status === 'active' ? 'Disable Account' : 'Enable Account'}
+              </Button>
+              {admin.role === 'super-admin' && <p className="text-xs text-gray-400 mt-2 text-center">
+                  Super Admin accounts cannot be disabled.
+                </p>}
+            </div>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-2 space-y-6">
+          <Card title="Recent Activity">
+            <div className="text-center py-8 text-gray-500">
+              <Activity className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+              <p>No recent activity logs found for this admin.</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <ConfirmDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleToggleStatus} title={admin.status === 'active' ? 'Disable Admin Account' : 'Enable Admin Account'} message={`Are you sure you want to ${admin.status === 'active' ? 'disable' : 'enable'} access for ${admin.firstName} ${admin.lastName}? This will ${admin.status === 'active' ? 'prevent' : 'allow'} them to log in to the system.`} confirmText={admin.status === 'active' ? 'Disable Account' : 'Enable Account'} variant={admin.status === 'active' ? 'danger' : 'primary'} isLoading={isProcessing} />
+    </AdminLayout>;
+}
