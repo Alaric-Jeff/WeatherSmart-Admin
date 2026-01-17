@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -36,10 +36,11 @@ export function DevicesPage() {
   const [editMac, setEditMac] = useState('');
   const [editReason, setEditReason] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const filteredDevices = devices.filter(device => device.macId.toLowerCase().includes(searchTerm.toLowerCase()) || device.userNames && device.userNames.some(name => name.toLowerCase().includes(searchTerm.toLowerCase())));
+  const filteredDevices = devices.filter((device: Device) => device.macId.toLowerCase().includes(searchTerm.toLowerCase()) || device.userNames && device.userNames.some((name: string) => name.toLowerCase().includes(searchTerm.toLowerCase())));
   const handleCreate = async (macId: string) => {
     try {
       await createDevice(macId);
@@ -91,6 +92,7 @@ export function DevicesPage() {
       setEditTarget(null);
       setEditMac('');
       setEditReason('');
+      setIsEditConfirmOpen(false);
     } catch (error) {
       toast.error('Failed to update device');
     } finally {
@@ -163,7 +165,7 @@ export function DevicesPage() {
                   <td colSpan={4} className="px-6 py-4 text-center">
                     No devices found
                   </td>
-                </tr> : filteredDevices.map(device => <tr key={device.deviceId} className="hover:bg-gray-50">
+                </tr> : filteredDevices.map((device: Device) => <tr key={device.deviceId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
                       {device.macId}
                     </td>
@@ -171,7 +173,7 @@ export function DevicesPage() {
                       {device.userIds.length === 0 ? <span className="text-gray-400 italic text-sm">
                           No users assigned
                         </span> : <div className="space-y-1">
-                          {device.userNames?.map((userName, idx) => <div key={idx} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                          {device.userNames?.map((userName: string, idx: number) => <div key={idx} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
                               <span className="text-gray-700">{userName}</span>
                               <button onClick={() => setUnassignAction({
                       deviceId: device.deviceId,
@@ -213,7 +215,7 @@ export function DevicesPage() {
       <AssignDeviceModal isOpen={isAssignModalOpen} onClose={() => {
       setIsAssignModalOpen(false);
       setSelectedDevice(null);
-    }} onAssign={handleAssign} currentUserIds={selectedDevice ? devices.find(d => d.deviceId === selectedDevice)?.userIds || [] : []} />
+    }} onAssign={handleAssign} currentUserIds={selectedDevice ? devices.find((d: Device) => d.deviceId === selectedDevice)?.userIds || [] : []} />
 
       <ConfirmDialog isOpen={!!unassignAction} onClose={() => setUnassignAction(null)} onConfirm={handleUnassign} title="Unassign Device" message={`Are you sure you want to unassign this device from ${unassignAction?.userName}? Other users will still have access to this device.`} confirmText="Unassign" variant="warning" isLoading={isProcessing} />
 
@@ -228,12 +230,14 @@ export function DevicesPage() {
             <Button type="button" variant="ghost" onClick={() => setEditTarget(null)}>
               Cancel
             </Button>
-            <Button type="button" onClick={handleUpdateMac} isLoading={isSavingEdit} disabled={!editMac || !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) || !editReason.trim()}>
-              Save Changes
+            <Button type="button" onClick={() => setIsEditConfirmOpen(true)} disabled={!editMac || !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) || !editReason.trim() || editMac === editTarget?.macId}>
+              Confirm
             </Button>
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog isOpen={isEditConfirmOpen && !!editTarget} onClose={() => setIsEditConfirmOpen(false)} onConfirm={handleUpdateMac} title="Confirm Update" message={`Update MAC from ${editTarget?.macId} to ${editMac}?\nReason: ${editReason}`} confirmText="Confirm Update" variant="warning" isLoading={isSavingEdit} />
 
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Device" maxWidth="sm">
         <div className="space-y-4">
