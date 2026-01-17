@@ -17,14 +17,15 @@ export function AdminLayout({
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-auto
+        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
+        md:translate-x-0
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <Sidebar onClose={() => setMobileMenuOpen(false)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 w-full md:ml-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full md:ml-64">
         {/* Mobile Header */}
         <div className="md:hidden bg-blue-600 text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 hover:bg-blue-700 rounded-lg transition-colors" aria-label="Toggle menu">
