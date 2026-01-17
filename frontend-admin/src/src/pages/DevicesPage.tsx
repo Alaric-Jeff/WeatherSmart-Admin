@@ -3,20 +3,24 @@ import { AdminLayout } from '../components/layout/AdminLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SearchInput } from '../components/ui/SearchInput';
-import { Badge } from '../components/ui/Badge';
 import { CreateDeviceModal } from '../components/devices/CreateDeviceModal';
 import { AssignDeviceModal } from '../components/devices/AssignDeviceModal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { useDevices } from '../hooks/useDevices';
-import { Plus, Link as LinkIcon, Unlink, Users } from 'lucide-react';
+import { Plus, Link as LinkIcon, Unlink, Users, Edit3, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Device } from '../lib/types';
 export function DevicesPage() {
   const {
     devices,
     loading,
     createDevice,
     assignDevice,
-    unassignDevice
+    unassignDevice,
+    updateDevice,
+    deleteDevice
   } = useDevices();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -28,19 +32,14 @@ export function DevicesPage() {
     userName: string;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [editTarget, setEditTarget] = useState<Device | null>(null);
+  const [editMac, setEditMac] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const filteredDevices = devices.filter(device => device.macId.toLowerCase().includes(searchTerm.toLowerCase()) || device.userNames && device.userNames.some(name => name.toLowerCase().includes(searchTerm.toLowerCase())));
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">Active</Badge>;
-      case 'inactive':
-        return <Badge variant="warning">Inactive</Badge>;
-      case 'unassigned':
-        return <Badge variant="neutral">Unassigned</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
   const handleCreate = async (macId: string) => {
     try {
       await createDevice(macId);
@@ -76,6 +75,43 @@ export function DevicesPage() {
     setSelectedDevice(deviceId);
     setIsAssignModalOpen(true);
   };
+
+  const openEditModal = (device: Device) => {
+    setEditTarget(device);
+    setEditMac(device.macId);
+    setEditReason('');
+  };
+
+  const handleUpdateMac = async () => {
+    if (!editTarget || !editMac || !editReason.trim()) return;
+    setIsSavingEdit(true);
+    try {
+      await updateDevice(editTarget.deviceId, editMac, editReason.trim());
+      toast.success('Device updated');
+      setEditTarget(null);
+      setEditMac('');
+      setEditReason('');
+    } catch (error) {
+      toast.error('Failed to update device');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget || !deleteReason.trim()) return;
+    setIsDeleting(true);
+    try {
+      await deleteDevice(deleteTarget.deviceId, deleteReason.trim());
+      toast.success('Device deleted');
+      setDeleteTarget(null);
+      setDeleteReason('');
+    } catch (error) {
+      toast.error('Failed to delete device');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   return <AdminLayout title="Device Management">
       <div className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-lg">
         <div className="flex items-start gap-3">
@@ -108,9 +144,6 @@ export function DevicesPage() {
                   MAC Address
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Assigned Users
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -123,19 +156,16 @@ export function DevicesPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={4} className="px-6 py-4 text-center">
                     Loading devices...
                   </td>
                 </tr> : filteredDevices.length === 0 ? <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={4} className="px-6 py-4 text-center">
                     No devices found
                   </td>
                 </tr> : filteredDevices.map(device => <tr key={device.deviceId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
                       {device.macId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(device.status)}
                     </td>
                     <td className="px-6 py-4">
                       {device.userIds.length === 0 ? <span className="text-gray-400 italic text-sm">
@@ -157,9 +187,20 @@ export function DevicesPage() {
                       {new Date(device.createdDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-900" onClick={() => openAssignModal(device.deviceId)} title="Assign to User">
-                        <LinkIcon className="h-4 w-4 mr-1" /> Assign
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-900" onClick={() => openAssignModal(device.deviceId)} title="Assign to User">
+                          <LinkIcon className="h-4 w-4 mr-1" /> Assign
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-800" onClick={() => openEditModal(device)} title="Edit MAC">
+                          <Edit3 className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800" onClick={() => {
+                  setDeleteTarget(device);
+                  setDeleteReason('');
+                }} title="Delete device">
+                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>)}
             </tbody>
@@ -175,5 +216,39 @@ export function DevicesPage() {
     }} onAssign={handleAssign} currentUserIds={selectedDevice ? devices.find(d => d.deviceId === selectedDevice)?.userIds || [] : []} />
 
       <ConfirmDialog isOpen={!!unassignAction} onClose={() => setUnassignAction(null)} onConfirm={handleUnassign} title="Unassign Device" message={`Are you sure you want to unassign this device from ${unassignAction?.userName}? Other users will still have access to this device.`} confirmText="Unassign" variant="warning" isLoading={isProcessing} />
+
+      <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Edit MAC Address">
+        <div className="space-y-4">
+          <Input label="MAC Address" value={editMac} onChange={e => setEditMac(e.target.value)} placeholder="AA:BB:CC:11:22:33" required pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$" error={editMac && !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) ? 'Invalid MAC format' : undefined} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for update</label>
+            <textarea className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={editReason} onChange={e => setEditReason(e.target.value)} placeholder="Describe why this MAC is being updated" rows={3} required />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setEditTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleUpdateMac} isLoading={isSavingEdit} disabled={!editMac || !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) || !editReason.trim()}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Device" maxWidth="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Delete device {deleteTarget?.macId}? This cannot be undone.</p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for deletion</label>
+            <textarea className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" value={deleteReason} onChange={e => setDeleteReason(e.target.value)} placeholder="Describe why this device is being removed" rows={3} required />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={isDeleting} disabled={!deleteReason.trim()}>
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </AdminLayout>;
 }

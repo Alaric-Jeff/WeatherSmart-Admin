@@ -70,13 +70,26 @@ export function useDevices() {
           assignedDate: d.assignedDate || new Date().toISOString()
         };
       }
+
+      const updateDevice = async (deviceId: string, macId: string, _reason?: string) => {
+        setDevices(prev => prev.map(d => d.deviceId === deviceId ? {
+          ...d,
+          macId
+        } : d));
+      };
+
+      const deleteDevice = async (deviceId: string, _reason?: string) => {
+        setDevices(prev => prev.filter(d => d.deviceId !== deviceId));
+      };
       return d;
     }));
   };
   const unassignDevice = async (deviceId: string, userId: string) => {
     setDevices(prev => prev.map(d => {
       if (d.deviceId === deviceId) {
-        const userIndex = d.userIds.indexOf(userId);
+        unassignDevice,
+        updateDevice,
+        deleteDevice
         const newUserIds = d.userIds.filter(id => id !== userId);
         const newUserNames = (d.userNames || []).filter((_, idx) => idx !== userIndex);
         return {
