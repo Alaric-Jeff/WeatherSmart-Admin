@@ -32,7 +32,7 @@ declare module "fastify" {
  * @param {FastifyRequest} req - Incoming request object
  * @param {FastifyReply} reply - Reply object
  */
-async function firebaseAuthPreHandler(
+export async function firebaseAuthPreHandler(
   req: FastifyRequest,
   reply: FastifyReply
 ) {
