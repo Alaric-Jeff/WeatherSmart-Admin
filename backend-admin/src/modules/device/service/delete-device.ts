@@ -5,8 +5,8 @@ import { createAuditFunction } from "../../audit-logs/create-audit-log.js";
 export async function deleteDeviceService(
   fastify: FastifyInstance,
   body: {
-    id: string;       // Firestore doc ID
-    adminId: string; // optional, for audit logs
+    id: string;       
+    adminId: string; 
   }
 ) {
   try {

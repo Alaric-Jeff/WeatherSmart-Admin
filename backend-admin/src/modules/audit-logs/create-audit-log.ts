@@ -1,7 +1,30 @@
 import type { FastifyInstance } from "fastify";
 import type { CreateAuditType } from "./schema/create-audit-fn.js";
 import { ServiceError } from "../../error/service-error.js";
-import { adminId } from "../admin/schema/admin-id.js";
+
+/**
+ * Creates an audit log entry for admin actions.
+ *
+ * This function validates the admin existence, constructs a readable
+ * `performedBy` string, and stores an audit record in the `audit_logs`
+ * collection for traceability and accountability.
+ *
+ * @param {FastifyInstance} fastify
+ * Fastify server instance used to access Firestore and logging utilities.
+ *
+ * @param {CreateAuditType} body
+ * Audit payload containing:
+ * - `adminId`: Firestore document ID of the admin performing the action
+ * - `action`: Description of the action performed (e.g. "device created")
+ * - `target`: Identifier of the affected resource (e.g. device ID, user ID)
+ *
+ * @returns {Promise<{ auditId: string }>}
+ * Returns the Firestore document ID of the created audit log entry.
+ *
+ * @throws {ServiceError}
+ * - `400` if the admin does not exist
+ * - `500` if an unexpected error occurs while creating the audit log
+ */
 
 export async function createAuditFunction(
     fastify: FastifyInstance,
