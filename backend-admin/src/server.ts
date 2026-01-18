@@ -1,11 +1,14 @@
 import Fastify from "fastify";      
 import dotenv from 'dotenv'
 import firebasePlug from "./plugin/firebase-plug.js";
+import emailPlugin from './plugin/nodemailer-plug.js'
 import cors from '@fastify/cors'
+import { adminRoutes } from "./shared/router/index.js";
 import { userModRoutes } from "./modules/user/router/index.js";
 import { deviceModRouter } from "./modules/device/router/index.js";
 import { auditModRouter } from "./modules/audit-logs/router/index.js";
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+
 
 dotenv.config();
 
@@ -19,14 +22,22 @@ if (!process.env.HTTP_PORT || !process.env.HOST) {
 }
 
 server.register(firebasePlug);
+await server.register(emailPlugin, {
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  user: "jefsohandsome1@gmail.com",      
+  pass: "oxkubdkarbnnjkfz",            
+});
 server.register(userModRoutes, {prefix: "/users"});
 server.register(deviceModRouter, {prefix: "/devices"});
 server.register(auditModRouter, {prefix: "/audit-logs"});
+server.register(adminRoutes, {prefix: "/admin"});
 const PORT = Number(process.env.HTTP_PORT);
 const HOST = process.env.HOST as string;
 
 await server.register(cors, {
-  origin: 'http://localhost:5173', // allow all origins
+  origin: 'http://localhost:5173', 
   methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'], 
 })
 
