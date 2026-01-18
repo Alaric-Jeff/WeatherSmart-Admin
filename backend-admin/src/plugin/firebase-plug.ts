@@ -18,6 +18,9 @@ declare module "fastify" {
     db: FirebaseFirestore.Firestore;
     /** Auth preHandler function */
     firebaseAuth: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+
+    /** Firebase Admin Auth SDK (for updateUser, disableUser, etc.) */
+    firebaseAuthSdk: admin.auth.Auth;
   }
 
   interface FastifyRequest {
@@ -71,6 +74,8 @@ export default fp(async function firebasePlugin(fastify: FastifyInstance) {
   // Decorate Fastify instance with Firebase Admin and Firestore
   fastify.decorate("firebaseAdmin", admin);
   fastify.decorate("db", admin.firestore());
+
+  fastify.decorate("firebaseAuthSdk", admin.auth());
 
   // Decorate requests with user property
   fastify.decorateRequest("user", null);
