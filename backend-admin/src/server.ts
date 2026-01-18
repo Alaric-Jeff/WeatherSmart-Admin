@@ -1,6 +1,7 @@
 import Fastify from "fastify";      
 import dotenv from 'dotenv'
 import firebasePlug from "./plugin/firebase-plug.js";
+import cors from '@fastify/cors'
 import { userModRoutes } from "./modules/user/router/index.js";
 import { deviceModRouter } from "./modules/device/router/index.js";
 import { auditModRouter } from "./modules/audit-logs/router/index.js";
@@ -23,6 +24,12 @@ server.register(deviceModRouter, {prefix: "/devices"});
 server.register(auditModRouter, {prefix: "/audit-logs"});
 const PORT = Number(process.env.HTTP_PORT);
 const HOST = process.env.HOST as string;
+
+await server.register(cors, {
+  origin: 'http://localhost:5173', // allow all origins
+  methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'], 
+})
+
 
 try {
   await server.listen({
