@@ -1,0 +1,7 @@
+export async function getTickets(){
+    try{
+        const res = await fetch("http://localhost:3000/tic")
+    }catch(err: unknown){
+        throw err;
+    }
+}

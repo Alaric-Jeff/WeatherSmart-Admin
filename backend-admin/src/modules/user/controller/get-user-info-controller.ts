@@ -15,7 +15,11 @@ export async function getUserInfoController(
     try{
         req.log.info(`current userId in controller: ${userId}`)
         const userInfo = await getUserInfoService(req.server, {userId});
-
+        
+        // Log the devices properly
+        req.log.info(`fetched devices count: ${userInfo.devices.length}`)
+        req.log.info({ devices: userInfo.devices }, 'fetched devices data')
+        
         return reply.code(200).send({
             message: "Successfully fetched user info",
             data: userInfo
@@ -27,9 +31,9 @@ export async function getUserInfoController(
                 message: err.message
             })
         }
-    req.log.error(err);
-    return reply.code(500).send({
-      message: "Internal Server Error",
-    });
+        req.log.error(err);
+        return reply.code(500).send({
+            message: "Internal Server Error",
+        });
     }
 }

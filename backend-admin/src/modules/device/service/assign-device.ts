@@ -47,18 +47,20 @@ export async function assignDevice(
 
     // Update both collections atomically using a batch
     const batch = fastify.db.batch();
+    const now = new Date();
 
-    // Update device: add user to connectedUsers array
+    // Update device: add user to connectedUsers array and set assignedDate
     batch.update(deviceRef, {
       connectedUsers: FieldValue.arrayUnion(body.userId),
       status: "paired",
-      updatedAt: new Date(),
+      assignedDate: now, // Add assigned date
+      updatedAt: now,
     });
 
     // Update user: add device to devices array
     batch.update(userRef, {
       devices: FieldValue.arrayUnion(body.deviceId),
-      updatedAt: new Date(),
+      updatedAt: now,
     });
 
     // Commit the batch

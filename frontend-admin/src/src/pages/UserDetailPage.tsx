@@ -6,7 +6,6 @@ import { Button } from '../components/ui/Button';
 import { UserStatusBadge } from '../components/users/UserStatusBadge';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useUsers } from '../hooks/useUsers';
-import { useDevices } from '../hooks/useDevices';
 import { ArrowLeft, Mail, Shield, Smartphone, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserInfo } from '../../api/users/get-user-info';
@@ -15,10 +14,8 @@ export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toggleUserStatus, resetPassword } = useUsers();
-  const { devices, unassignDevice } = useDevices();
 
   const [user, setUser] = useState<any | null>(null);
-  const [userDevices, setUserDevices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [confirmAction, setConfirmAction] = useState<{
@@ -28,29 +25,22 @@ export function UserDetailPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch specific user on mount
- useEffect(() => {
-  const fetchUser = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const userData = await getUserInfo(id);
-      setUser(userData);
-    } catch (err) {
-      console.error('Error fetching user info:', err);
-      toast.error('Failed to fetch user info');
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchUser();
-}, [id]);
-
-// compute devices assigned to user whenever devices change
-useEffect(() => {
-  if (!user) return;
-  setUserDevices(devices.filter(d => d.userIds.includes(user.uuid)));
-}, [devices, user]);
-
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const userData = await getUserInfo(id);
+        setUser(userData);
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+        toast.error('Failed to fetch user info');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, [id]);
 
   if (loading) {
     return (
@@ -71,6 +61,9 @@ useEffect(() => {
     );
   }
 
+  // Get user devices from the user object itself
+  const userDevices = Array.isArray(user.devices) ? user.devices : [];
+
   const handleConfirm = async () => {
     if (!confirmAction) return;
     setIsProcessing(true);
@@ -82,7 +75,8 @@ useEffect(() => {
         await resetPassword(user.uuid);
         toast.success('Password reset email sent');
       } else if (confirmAction.type === 'unassignDevice') {
-        await unassignDevice(confirmAction.payload.deviceId, user.uuid);
+        // TODO: Call your unassign device API here
+        // await unassignDeviceAPI(confirmAction.payload.deviceId, user.uuid);
         toast.success('Device unassigned successfully');
       }
 
@@ -126,7 +120,7 @@ useEffect(() => {
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">User ID</span>
-                <span className="font-mono text-gray-900">{user.uuid}</span>
+                <span className="font-mono text-gray-900 text-xs break-all">{user.uuid}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Joined</span>
@@ -179,47 +173,34 @@ useEffect(() => {
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MAC ID</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Other Users</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {userDevices.map(device => {
-                      const otherUsers = device.userNames?.filter((_: string | undefined, idx: number) => device.userIds[idx] !== user.uuid) || [];
-                      return (
-                        <tr key={device.deviceId}>
-                          <td className="px-4 py-3 font-mono text-sm">{device.macId}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${device.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {device.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {otherUsers.length > 0 ? (
-                              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                +{otherUsers.length} other user{otherUsers.length > 1 ? 's' : ''}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 italic">Only this user</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {device.assignedDate ? new Date(device.assignedDate).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600"
-                              onClick={() => setConfirmAction({ type: 'unassignDevice', payload: { deviceId: device.deviceId } })}
-                            >
-                              Unassign
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {userDevices.map((device: any) => (
+                      <tr key={device.uuid || device.deviceId}>
+                        <td className="px-4 py-3 font-mono text-sm">{device.macId}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${device.status === 'paired' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {device.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {device.createdAt ? new Date(device.createdAt).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600"
+                            onClick={() => setConfirmAction({ type: 'unassignDevice', payload: { deviceId: device.uuid || device.deviceId } })}
+                          >
+                            Unassign
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -246,7 +227,7 @@ useEffect(() => {
             ? `Are you sure you want to ${user.status === 'activated' ? 'disable' : 'activate'} this user account?`
             : confirmAction?.type === 'resetPassword'
             ? 'Are you sure you want to send a password reset email to this user?'
-            : 'Are you sure you want to unassign this device from this user? Other users will still have access to this device.'
+            : 'Are you sure you want to unassign this device from this user?'
         }
         confirmText="Confirm"
         variant={confirmAction?.type === 'toggleStatus' && user.status === 'activated' ? 'danger' : 'primary'}

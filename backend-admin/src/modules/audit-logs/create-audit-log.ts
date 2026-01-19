@@ -40,7 +40,7 @@ export async function createAuditFunction(
         const adminData = adminDoc.data();
         const normalizedReason = body.reason ?? "";
         const audit = await fastify.db.collection('audit_logs').add({
-            performedBy: `${adminData!.firstName} ${adminData!.lastName} (${adminData!.gmail})`,
+            performedBy: `${adminData!.firstName} ${adminData!.lastName} (${adminData!.email})`,
             action: body.action,
             target: body.target,
             reason: normalizedReason,
