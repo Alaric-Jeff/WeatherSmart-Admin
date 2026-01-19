@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus, Eye, Shield, CheckCircle, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -8,8 +10,7 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useAdmins } from '../hooks/useAdmins';
-import { Plus, Eye, Shield, Mail, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { type CreateAdminPayload } from '../../api/shared/create-admin';
 export function AdminsPage() {
   const {
     admins,
@@ -19,23 +20,56 @@ export function AdminsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [step, setStep] = useState(1); // Multi-step modal: 1 = Form, 2 = Confirmation
-  const [newAdmin, setNewAdmin] = useState({
+  const [newAdmin, setNewAdmin] = useState<CreateAdminPayload>({
     firstName: '',
     lastName: '',
     middleName: '',
-    email: ''
+    email: '',
+    password: '',
+    confirmPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const filteredAdmins = admins.filter(admin => admin.firstName.toLowerCase().includes(searchTerm.toLowerCase()) || admin.lastName.toLowerCase().includes(searchTerm.toLowerCase()) || admin.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredAdmins = admins.filter(admin => {
+    const name = `${admin.firstName ?? ''} ${admin.lastName ?? ''}`.toLowerCase();
+    const email = admin.email?.toLowerCase() ?? '';
+    const term = searchTerm.toLowerCase();
+
+    return name.includes(term) || email.includes(term);
+  });
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newAdmin.password !== newAdmin.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newAdmin.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}\[\]|:;"'<>,.?/]).+$/;
+
+    if (!strongPassword.test(newAdmin.password)) {
+      toast.error('Password needs upper, lower, number, and special character');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createAdmin(newAdmin);
+      setNewAdmin(prev => ({
+        ...prev,
+        firstName: '',
+        lastName: '',
+        middleName: '',
+        password: '',
+        confirmPassword: ''
+      }));
       setStep(2); // Move to confirmation step
-      toast.success('Admin invitation sent successfully');
+      toast.success('Admin created successfully');
     } catch (error) {
-      toast.error('Failed to create admin');
+      toast.error(error instanceof Error ? error.message : 'Failed to create admin');
     } finally {
       setIsSubmitting(false);
     }
@@ -47,7 +81,9 @@ export function AdminsPage() {
       firstName: '',
       lastName: '',
       middleName: '',
-      email: ''
+      email: '',
+      password: '',
+      confirmPassword: ''
     });
   };
   return <AdminLayout title="Admin Management">
@@ -69,7 +105,7 @@ export function AdminsPage() {
           <SearchInput placeholder="Search admins..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
-          Invite Admin
+          Add Admin
         </Button>
       </div>
 
@@ -104,92 +140,110 @@ export function AdminsPage() {
                   <td colSpan={5} className="px-6 py-4 text-center">
                     No admins found
                   </td>
-                </tr> : filteredAdmins.map(admin => <tr key={admin.adminId} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
-                          {admin.firstName.charAt(0)}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {admin.firstName}{' '}
-                            {admin.middleName && `${admin.middleName} `}
-                            {admin.lastName}
+                </tr> : filteredAdmins.map(admin => {
+                  const displayName = (admin.firstName || admin.lastName)
+                    ? `${admin.firstName ?? ''} ${admin.middleName ? `${admin.middleName} ` : ''}${admin.lastName ?? ''}`.replace(/\s+/g, ' ').trim()
+                    : admin.email;
+                  const initial = displayName.charAt(0).toUpperCase();
+
+                  return (
+                    <tr key={admin.adminId} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
+                            {initial}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {admin.email}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {displayName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {admin.email}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={admin.role === 'super-admin' ? 'primary' : 'neutral'}>
-                        {admin.role === 'super-admin' ? 'Super Admin' : 'Admin'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={admin.status === 'active' ? 'success' : 'danger'}>
-                        {admin.status === 'active' ? 'Active' : 'Disabled'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(admin.lastLogin).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link to={`/admins/${admin.adminId}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4 mr-1" /> View
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={admin.role === 'super-admin' ? 'primary' : 'neutral'}>
+                          {admin.role === 'super-admin' ? 'Super Admin' : 'Admin'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={admin.status === 'active' ? 'success' : 'danger'}>
+                          {admin.status === 'active' ? 'Active' : 'Disabled'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(admin.lastLogin).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link to={`/admins/${admin.adminId}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
       </Card>
 
-      <Modal isOpen={isCreateModalOpen} onClose={handleCloseModal} title={step === 1 ? 'Invite New Admin' : 'Invitation Sent'} maxWidth="lg">
+      <Modal isOpen={isCreateModalOpen} onClose={handleCloseModal} title={step === 1 ? 'Add Admin' : 'Admin Added'} maxWidth="lg">
         {step === 1 ? <form onSubmit={handleCreate} className="space-y-4">
             <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
               <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Lock className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div className="text-sm text-blue-900">
-                  <p className="font-semibold mb-1">Admin Creation Flow</p>
+                  <p className="font-semibold mb-1">Create admin credentials</p>
                   <ol className="list-decimal list-inside space-y-1 text-blue-700">
-                    <li>Enter admin details and send invitation</li>
-                    <li>Admin receives email to verify ownership</li>
-                    <li>Admin completes profile (phone, address, password)</li>
-                    <li>Admin can log in with credentials</li>
+                    <li>Enter the admin email and a strong password</li>
+                    <li>No verification email is sent; credentials work immediately</li>
+                    <li>Share the credentials securely and ask them to update the password after first login</li>
                   </ol>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First Name" value={newAdmin.firstName} onChange={e => setNewAdmin({
+              <Input label="First Name (optional)" value={newAdmin.firstName} onChange={e => setNewAdmin({
             ...newAdmin,
             firstName: e.target.value
-          })} required placeholder="John" />
-              <Input label="Last Name" value={newAdmin.lastName} onChange={e => setNewAdmin({
+          })} placeholder="John" />
+              <Input label="Last Name (optional)" value={newAdmin.lastName} onChange={e => setNewAdmin({
             ...newAdmin,
             lastName: e.target.value
-          })} required placeholder="Doe" />
+          })} placeholder="Doe" />
             </div>
-            <Input label="Middle Name (Optional)" value={newAdmin.middleName} onChange={e => setNewAdmin({
+            <Input label="Middle Name (optional)" value={newAdmin.middleName} onChange={e => setNewAdmin({
           ...newAdmin,
           middleName: e.target.value
         })} placeholder="Michael" />
+
             <Input label="Email Address" type="email" value={newAdmin.email} onChange={e => setNewAdmin({
           ...newAdmin,
           email: e.target.value
         })} required placeholder="admin@weathersmart.com" />
 
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Password" type="password" leftIcon={<Lock className="h-4 w-4 text-gray-400" />} value={newAdmin.password} onChange={e => setNewAdmin({
+            ...newAdmin,
+            password: e.target.value
+          })} required placeholder="Strong password" />
+              <Input label="Confirm Password" type="password" leftIcon={<Lock className="h-4 w-4 text-gray-400" />} value={newAdmin.confirmPassword} onChange={e => setNewAdmin({
+            ...newAdmin,
+            confirmPassword: e.target.value
+          })} required placeholder="Re-enter password" />
+            </div>
+
             <div className="flex justify-end gap-3 mt-6">
               <Button type="button" variant="ghost" onClick={handleCloseModal}>
                 Cancel
               </Button>
-              <Button type="submit" isLoading={isSubmitting} leftIcon={<Mail className="h-4 w-4" />}>
-                Send Invitation
+              <Button type="submit" isLoading={isSubmitting} leftIcon={<Plus className="h-4 w-4" />}>
+                Create Admin
               </Button>
             </div>
           </form> : <div className="text-center py-6">
@@ -197,21 +251,17 @@ export function AdminsPage() {
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Invitation Sent Successfully!
+              Admin Added Successfully!
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              An email has been sent to <strong>{newAdmin.email}</strong> with
-              instructions to verify their account and complete their profile.
+              Share the credentials with <strong>{newAdmin.email}</strong>; they can sign in right away.
             </p>
             <div className="bg-gray-50 p-4 rounded-md text-left text-sm text-gray-700 mb-6">
               <p className="font-semibold mb-2">Next Steps:</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>Admin clicks verification link in email</li>
-                <li>
-                  Admin completes profile setup (phone, address, password)
-                </li>
-                <li>Admin is redirected to login page</li>
-                <li>Admin can access the system with their credentials</li>
+                <li>Provide the email and password securely</li>
+                <li>Ask the admin to change the password after first login</li>
+                <li>Monitor their activity from the Admin dashboard</li>
               </ol>
             </div>
             <Button onClick={handleCloseModal}>Done</Button>

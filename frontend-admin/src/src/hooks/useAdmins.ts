@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createAdminAccount, type CreateAdminPayload } from '../../api/shared/create-admin';
 import { Admin } from '../lib/types';
 const MOCK_ADMINS: Admin[] = [{
   adminId: 'admin-123',
@@ -45,20 +46,26 @@ export function useAdmins() {
     };
     fetchAdmins();
   }, []);
-  const createAdmin = async (data: Partial<Admin>) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  const createAdmin = async (data: CreateAdminPayload) => {
+    const apiResult = await createAdminAccount(data);
+
+    const displayName = data.firstName || data.lastName
+      ? `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim()
+      : data.email.split("@")[0] || data.email;
+
     const newAdmin: Admin = {
-      adminId: `admin-${Date.now()}`,
-      email: data.email!,
-      firstName: data.firstName!,
-      lastName: data.lastName!,
+      adminId: apiResult.adminId ?? `admin-${Date.now()}`,
+      email: data.email,
+      firstName: data.firstName ?? displayName,
+      lastName: data.lastName ?? "",
+      middleName: data.middleName,
       role: 'admin',
       status: 'active',
       authMethod: 'email',
       createdDate: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      ...data
-    } as Admin;
+      lastLogin: new Date().toISOString()
+    };
+
     setAdmins(prev => [...prev, newAdmin]);
     return newAdmin;
   };

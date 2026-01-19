@@ -5,7 +5,10 @@ import { createAuditFunction } from "../../modules/audit-logs/create-audit-log.j
 
 export async function createAdminAccount(
   fastify: FastifyInstance,
-  body: createAdminAccountType & { superAdminId: string }
+  body: Omit<createAdminAccountType, "confirmPassword"> & {
+    superAdminId: string;
+    password: string;
+  }
 ) {
   try {
     // 1️⃣ Check super-admin exists
@@ -18,61 +21,65 @@ export async function createAdminAccount(
       throw new ServiceError(404, "Super-admin not found");
     }
 
-    // 2️⃣ Create Firebase Auth user with temporary password
-    const tempPassword = Math.random().toString(36).slice(-10); 
+    const displayName = [body.firstName, body.lastName]
+      .filter((value) => Boolean(value && value.trim()))
+      .join(" ")
+      .trim() || body.email;
+
+    // 2️⃣ Create Firebase Auth user with provided password
     const userRecord = await fastify.firebaseAuthSdk.createUser({
       email: body.email,
-      password: tempPassword,
-      displayName: `${body.firstName} ${body.lastName}`,
+      password: body.password,
+      displayName,
     });
 
-    // 3️⃣ Save admin in Firestore
+    // 3️⃣ Save admin in Firestore with simplified shape (no email verification)
     await fastify.db.collection("admins").doc(userRecord.uid).set({
-      uid: userRecord.uid,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      middleName: body.middleName || null,
+      adminId: userRecord.uid,
       email: body.email,
-      verified: false,
-      createdAt: new Date(),
-      createdBy: body.superAdminId,
+      emailVerified: false,
+      firstName: body.firstName ?? null,
+      lastName: body.lastName ?? null,
+      middleName: body.middleName ?? null,
+      role: "admin",
+      status: "active",
     });
 
-    // 4️⃣ Generate email verification link
-    const link = await fastify.firebaseAuthSdk.generateEmailVerificationLink(
-      body.email
-    );
-
-    // 5️⃣ Send email via Fastify email plugin
-    await fastify.email.sendMail({
-      from: '"WeatherSmart-Rack Team" <no-reply@yourapp.com>',
-      to: body.email,
-      subject: "Complete your admin account",
-      html: `
-        <p>Hello ${body.firstName},</p>
-        <p>A super-admin has created an admin account for you.</p>
-        <p>Click the link below to verify and complete your profile:</p>
-        <a href="${link}">Complete Profile</a>
-        <p>Your temporary password (for testing purposes): ${tempPassword}</p>
-      `,
-    });
-
-    fastify.log.info(`Admin invitation sent to ${body.email}`);
     await createAuditFunction(fastify, {
       adminId: body.superAdminId,
       action: "Created admin account",
       target: userRecord.uid,
-      reason: "Super-admin invitation",
+      reason: "Super-admin manual creation without email verification",
     });
 
+    fastify.log.info(`Admin account created for ${body.email} with ID ${userRecord.uid}`);
+
     return {
-      message:
-        "Admin account created successfully. Verification email sent.",
-      tempPassword,
-      verificationLink: link,
+      message: "Admin account created successfully.",
+      adminId: userRecord.uid,
+      email: body.email,
+      emailVerified: false,
+      firstName: body.firstName ?? null,
+      lastName: body.lastName ?? null,
+      middleName: body.middleName ?? null,
+      role: "admin",
+      status: "active",
     };
   } catch (err: unknown) {
     fastify.log.error(err);
-    throw new ServiceError(500, "Internal Server Error");
+    // Surface useful errors instead of a generic 500
+    const code = (err as { code?: string })?.code;
+    const message = (err as { message?: string })?.message;
+
+    if (code === "auth/email-already-exists") {
+      throw new ServiceError(409, "Email already exists. Choose another email.");
+    }
+
+    if (code === "auth/invalid-password") {
+      throw new ServiceError(400, "Password does not meet requirements.");
+    }
+
+    // Permission / network / unknown Firebase or Firestore issues
+    throw new ServiceError(500, message || "Internal Server Error");
   }
 }

@@ -12,9 +12,6 @@ export async function signin(
     if (!decoded.email) {
       throw new ServiceError(401, "Invalid token");
     }
-    if (!decoded.email_verified) {
-      throw new ServiceError(403, "Email not verified");
-    }
 
     const uid = decoded.uid;
     const adminDoc = await fastify.db.collection("admins").doc(uid).get();
@@ -37,7 +34,7 @@ export async function signin(
       email: decoded.email,
       role: adminData.role,
       displayName: `${adminData.firstName} ${adminData.lastName}`,
-      emailVerified: true,
+      emailVerified: decoded.email_verified || false,
       status: adminData.status
     };
 

@@ -38,9 +38,9 @@ export interface Ticket {
 export interface Admin {
   adminId: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleName?: string | null;
   role: Role;
   status: 'active' | 'disabled';
   authMethod: 'email' | 'google';

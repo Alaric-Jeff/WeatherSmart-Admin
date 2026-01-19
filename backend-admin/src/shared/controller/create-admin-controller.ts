@@ -7,7 +7,7 @@ export async function createAdminAccountController(
     req: FastifyRequest<{Body: createAdminAccountType}>,
     reply: FastifyReply
 ){
-    const {email, firstName, lastName, middleName} = req.body
+    const {email, firstName, lastName, middleName, password, confirmPassword} = req.body
     try{
 
         if(!req.user?.uid){
@@ -16,19 +16,28 @@ export async function createAdminAccountController(
             })        
         }
 
+        if(password !== confirmPassword){
+            return reply.code(400).send({
+                message: "Password and confirm password do not match"
+            })
+        }
+
         const adminId = req.user.uid;
-        const normalizedMiddleName = middleName ?? ""
-        
+        const normalizedFirstName = firstName?.trim() ?? "";
+        const normalizedLastName = lastName?.trim() ?? "";
+        const normalizedMiddleName = middleName?.trim() ?? "";
+
         const res = await createAdminAccount(req.server, {
             superAdminId: adminId,
             email,
-            firstName,
-            lastName,
-            middleName: normalizedMiddleName
+            firstName: normalizedFirstName || undefined,
+            lastName: normalizedLastName || undefined,
+            middleName: normalizedMiddleName || undefined,
+            password
         })
 
         return reply.code(200).send({
-            message: "Successful signin",
+            message: "Admin created successfully",
             data: res
 
         })
