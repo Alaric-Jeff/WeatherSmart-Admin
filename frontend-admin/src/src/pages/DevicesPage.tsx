@@ -14,6 +14,10 @@ import { Device } from '../lib/types';
 import { getDevices } from '../../api/devices/get-devices';
 import { getUsers } from '../../api/users/get-users';
 import { assignDevice } from '../../api/devices/assign-device';
+import { unassignDevice } from '../../api/devices/unassign-device';
+import { deleteDevice } from '../../api/devices/delete-device';
+import { updateDevice } from '../../api/devices/update-device';
+import { registerDevice } from '../../api/devices/register-device';
 
 export function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -37,7 +41,6 @@ export function DevicesPage() {
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch devices on mount
   useEffect(() => {
     fetchDevices();
   }, []);
@@ -45,13 +48,11 @@ export function DevicesPage() {
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      // Fetch both devices and users in parallel
       const [devicesData, usersData] = await Promise.all([
         getDevices(),
         getUsers()
       ]);
 
-      // Create a map of userId -> user display name for quick lookup
       const userMap = new Map(
         usersData.map((user: any) => {
           const displayName = user.displayName || 
@@ -62,12 +63,8 @@ export function DevicesPage() {
         })
       );
       
-      // Transform API response to match the Device type
       const transformedDevices = devicesData.map((device: any) => {
-        // connectedUser is an array of user IDs (strings)
         const userIds = Array.isArray(device.connectedUser) ? device.connectedUser : [];
-        
-        // Map user IDs to user names using the userMap
         const userNames = userIds.map((userId: string) => 
           userMap.get(userId) || 'Unknown User'
         );
@@ -100,14 +97,13 @@ export function DevicesPage() {
 
   const handleCreate = async (macId: string) => {
     try {
-      // TODO: Call your create device API here
-      // await createDeviceAPI(macId);
-      
+      await registerDevice(macId);
       toast.success('Device registered successfully');
       setIsCreateModalOpen(false);
       await fetchDevices();
     } catch (error) {
       toast.error('Failed to register device');
+      throw error;
     }
   };
 
@@ -117,10 +113,13 @@ export function DevicesPage() {
     try {
       await assignDevice(userId, selectedDevice, undefined);
       toast.success(`Device assigned to ${userName}`);
+      setIsAssignModalOpen(false);
+      setSelectedDevice(null);
       await fetchDevices();
     } catch (error) {
       toast.error('Failed to assign device');
       console.error('Error assigning device:', error);
+      throw error;
     }
   };
 
@@ -128,14 +127,18 @@ export function DevicesPage() {
     if (!unassignAction) return;
     setIsProcessing(true);
     try {
-      // TODO: Call your unassign device API here
-      // await unassignDeviceAPI(unassignAction.deviceId, unassignAction.userId);
+      await unassignDevice(
+        unassignAction.userId, 
+        unassignAction.deviceId, 
+        `Unassigned from ${unassignAction.userName}`
+      );
       
       toast.success(`Device unassigned from ${unassignAction.userName}`);
       setUnassignAction(null);
       await fetchDevices();
     } catch (error) {
       toast.error('Failed to unassign device');
+      console.error('Error unassigning device:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -156,10 +159,9 @@ export function DevicesPage() {
     if (!editTarget || !editMac || !editReason.trim()) return;
     setIsSavingEdit(true);
     try {
-      // TODO: Call your update device API here
-      // await updateDeviceAPI(editTarget.deviceId, editMac, editReason.trim());
+      await updateDevice(editTarget.deviceId, editMac, editReason.trim());
       
-      toast.success('Device updated');
+      toast.success('Device MAC address updated successfully');
       setEditTarget(null);
       setEditMac('');
       setEditReason('');
@@ -167,6 +169,7 @@ export function DevicesPage() {
       await fetchDevices();
     } catch (error) {
       toast.error('Failed to update device');
+      console.error('Error updating device:', error);
     } finally {
       setIsSavingEdit(false);
     }
@@ -176,15 +179,15 @@ export function DevicesPage() {
     if (!deleteTarget || !deleteReason.trim()) return;
     setIsDeleting(true);
     try {
-      // TODO: Call your delete device API here
-      // await deleteDeviceAPI(deleteTarget.deviceId, deleteReason.trim());
+      await deleteDevice(deleteTarget.deviceId, deleteReason.trim());
       
-      toast.success('Device deleted');
+      toast.success('Device deleted successfully');
       setDeleteTarget(null);
       setDeleteReason('');
       await fetchDevices();
     } catch (error) {
       toast.error('Failed to delete device');
+      console.error('Error deleting device:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -368,7 +371,11 @@ export function DevicesPage() {
 
       <Modal
         isOpen={!!editTarget}
-        onClose={() => setEditTarget(null)}
+        onClose={() => {
+          setEditTarget(null);
+          setEditMac('');
+          setEditReason('');
+        }}
         title="Edit MAC Address"
       >
         <div className="space-y-4">
@@ -399,7 +406,15 @@ export function DevicesPage() {
             />
           </div>
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="ghost" onClick={() => setEditTarget(null)}>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => {
+                setEditTarget(null);
+                setEditMac('');
+                setEditReason('');
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -431,7 +446,10 @@ export function DevicesPage() {
 
       <Modal
         isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteReason('');
+        }}
         title="Delete Device"
         maxWidth="sm"
       >
@@ -453,7 +471,14 @@ export function DevicesPage() {
             />
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setDeleteTarget(null);
+                setDeleteReason('');
+              }} 
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
             <Button
