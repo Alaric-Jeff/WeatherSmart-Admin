@@ -25,7 +25,7 @@ export function useAuth() {
     checkAuth();
   }, []);
 
- const login = async (email: string, password: string) => {
+const login = async (email: string, password: string) => {
   setLoading(true);
   setError(null);
 
@@ -34,13 +34,33 @@ export function useAuth() {
     const idToken = await frontendSignIn(email, password);
 
     // 2️⃣ Verify admin role with backend
-    const adminData = await adminSignIn(idToken);
+    const backendData = await adminSignIn(idToken);
+    console.log('Raw backend response:', backendData);
 
-    // 3️⃣ Store in state & localStorage
-    setUser(adminData);
-    localStorage.setItem('ws_admin_user', JSON.stringify(adminData));
+    // Extract the actual user object
+    const userData = backendData.data;
+    console.log('Mapped backend data:', userData);
 
-    return adminData;
+    // 3️⃣ Map backendData to match Admin type
+    const mappedAdmin: Admin = {
+      adminId: userData.uid ?? '', // uid from backend
+      email: userData.email ?? '',
+      firstName: userData.displayName?.split(' ')[0] ?? '',
+      lastName: userData.displayName?.split(' ').slice(1).join(' ') ?? '',
+      role: userData.role,
+      status: 'active',
+      authMethod: 'email',
+      createdDate: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+    };
+
+    console.log('Mapped admin object:', mappedAdmin);
+
+    // 4️⃣ Store in state & localStorage
+    setUser(mappedAdmin);
+    localStorage.setItem('ws_admin_user', JSON.stringify(mappedAdmin));
+
+    return mappedAdmin;
   } catch (err: any) {
     setError(err.message || 'Failed to login');
     throw err;
@@ -48,6 +68,8 @@ export function useAuth() {
     setLoading(false);
   }
 };
+
+
 
 
   // Optional: keep Google login for future
