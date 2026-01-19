@@ -1,13 +1,14 @@
 import { type FastifyRequest, type FastifyReply} from "fastify";
 import { ServiceError } from "../../../error/service-error.js";
 import { deleteDeviceService } from "../service/delete-device.js";
-import type { deviceId } from "../schema/device-id.js";
+
+import { deleteDevice } from "../schema/device-id.js";
 export async function deleteDeviceController(
-    req: FastifyRequest<{Body: deviceId}>,
+    req: FastifyRequest<{Body: deleteDevice}>,
     reply: FastifyReply
 ){
     const {
-        uuid
+       id, reason
     } = req.body;
     try{
    if (!req.user?.uid) {
@@ -17,7 +18,8 @@ export async function deleteDeviceController(
     const adminId = req.user.uid;
     await deleteDeviceService(req.server, {
         adminId,
-        id: uuid
+        id,
+        reason
     })
 
     return reply.code(200).send({
