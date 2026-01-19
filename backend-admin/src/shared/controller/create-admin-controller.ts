@@ -23,18 +23,26 @@ export async function createAdminAccountController(
         }
 
         const adminId = req.user.uid;
-        const normalizedFirstName = firstName?.trim() ?? "";
-        const normalizedLastName = lastName?.trim() ?? "";
-        const normalizedMiddleName = middleName?.trim() ?? "";
 
-        const res = await createAdminAccount(req.server, {
-            superAdminId: adminId,
-            email,
-            firstName: normalizedFirstName || undefined,
-            lastName: normalizedLastName || undefined,
-            middleName: normalizedMiddleName || undefined,
-            password
-        })
+        // Build payload with only defined properties
+        const payload: {
+          superAdminId: string;
+          email: string;
+          firstName?: string;
+          lastName?: string;
+          middleName?: string;
+          password: string;
+        } = {
+          superAdminId: adminId,
+          email,
+          password
+        };
+
+        if (firstName) payload.firstName = firstName;
+        if (lastName) payload.lastName = lastName;
+        if (middleName) payload.middleName = middleName;
+
+        const res = await createAdminAccount(req.server, payload)
 
         return reply.code(200).send({
             message: "Admin created successfully",
