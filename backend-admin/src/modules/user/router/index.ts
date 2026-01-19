@@ -4,6 +4,7 @@ import { getUserInfoController } from "../controller/get-user-info-controller.js
 import { disableUserAccountReq } from "../schemas/disable-account-schema.js";
 import { sendUserPasswordResetController } from "../controller/send-password-controller.js";
 import { firebaseAuthPreHandler } from "../../../plugin/firebase-plug.js";
+import { activateAccountController } from "../controller/activate-account-controller.js";
 
 export function userModRoutes(fastify: FastifyInstance){
     fastify.route({
@@ -13,7 +14,7 @@ export function userModRoutes(fastify: FastifyInstance){
     })
 
     fastify.route({
-        url: '/get-user-info/:id',
+        url: '/get-user-info/:userId',
         method: 'GET',
         handler: getUserInfoController
     })
@@ -25,6 +26,15 @@ export function userModRoutes(fastify: FastifyInstance){
             body: disableUserAccountReq 
         }, preHandler: firebaseAuthPreHandler,
         handler: getUserInfoController
+    })
+
+    fastify.route({
+        url: '/activate-account',
+        method: 'POST',
+        schema: {
+            body: disableUserAccountReq 
+        }, preHandler: firebaseAuthPreHandler,
+        handler: activateAccountController
     })
 
     fastify.route({

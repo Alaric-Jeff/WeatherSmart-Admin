@@ -11,7 +11,7 @@ export async function assignDevice(
   try {
     const userRef = fastify.db.collection("users").doc(body.userId);
     const deviceRef = fastify.db.collection("devices").doc(body.deviceId);
-
+    
     const [userSnap, deviceSnap] = await Promise.all([
       userRef.get(),
       deviceRef.get(),
@@ -25,19 +25,48 @@ export async function assignDevice(
       throw new ServiceError(404, "Device not found");
     }
 
+    // Check device data - ensure we're working with an array
     const deviceData = deviceSnap.data()!;
-    const assignedTo = deviceData.assignedTo ?? [];
+    const connectedUsers = Array.isArray(deviceData.connectedUsers) 
+      ? deviceData.connectedUsers 
+      : [];
 
-    if (assignedTo.includes(body.userId)) {
+    if (connectedUsers.includes(body.userId)) {
       throw new ServiceError(409, "User already assigned to this device");
     }
 
-    await deviceRef.update({
-      assignedTo: FieldValue.arrayUnion(body.userId),
+    // Check user data - ensure we're working with an array
+    const userData = userSnap.data()!;
+    const userDevices = Array.isArray(userData.devices) 
+      ? userData.devices 
+      : [];
+
+    if (userDevices.includes(body.deviceId)) {
+      throw new ServiceError(409, "Device already assigned to this user");
+    }
+
+    // Update both collections atomically using a batch
+    const batch = fastify.db.batch();
+    const now = new Date();
+
+    // Update device: add user to connectedUsers array and set assignedDate
+    batch.update(deviceRef, {
+      connectedUsers: FieldValue.arrayUnion(body.userId),
       status: "paired",
-      updatedAt: new Date(),
+      assignedDate: now, // Add assigned date
+      updatedAt: now,
     });
 
+    // Update user: add device to devices array
+    batch.update(userRef, {
+      devices: FieldValue.arrayUnion(body.deviceId),
+      updatedAt: now,
+    });
+
+    // Commit the batch
+    await batch.commit();
+
+    // Create audit log
     await createAuditFunction(fastify, {
       adminId: body.adminId,
       action: "device assigned",
@@ -45,8 +74,10 @@ export async function assignDevice(
       reason: body.reason ?? "",
     });
 
-    
   } catch (err: unknown) {
+    if (err instanceof ServiceError) {
+      throw err;
+    }
     fastify.log.error(err);
     throw new ServiceError(500, "Internal Server Error");
   }

@@ -42,16 +42,16 @@ export async function firebaseAuthPreHandler(
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
-    reply.code(401).send({ error: "AUTH_MISSING" });
-    return;
+    return reply.code(401).send({ error: "AUTH_MISSING" }); // ADDED return
   }
 
   try {
     req.user = await admin
       .auth()
       .verifyIdToken(authHeader.replace("Bearer ", ""));
-  } catch {
-    reply.code(401).send({ error: "AUTH_INVALID" });
+  } catch (error) {
+    req.log.error(`token verification failed, error: ${error}`); // ADDED logging
+    return reply.code(401).send({ error: "AUTH_INVALID" }); // ADDED return
   }
 }
 
