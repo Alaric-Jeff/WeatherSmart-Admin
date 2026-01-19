@@ -27,19 +27,20 @@ export async function createAdminAccountController(
         const normalizedLastName = lastName?.trim() ?? "";
         const normalizedMiddleName = middleName?.trim() ?? "";
 
-        const res = await createAdminAccount(req.server, {
+        const payload = {
             superAdminId: adminId,
             email,
-            firstName: normalizedFirstName || undefined,
-            lastName: normalizedLastName || undefined,
-            middleName: normalizedMiddleName || undefined,
-            password
-        })
+            password,
+            ...(normalizedFirstName ? { firstName: normalizedFirstName } : {}),
+            ...(normalizedLastName ? { lastName: normalizedLastName } : {}),
+            ...(normalizedMiddleName ? { middleName: normalizedMiddleName } : {}),
+        }
+
+        const res = await createAdminAccount(req.server, payload)
 
         return reply.code(200).send({
             message: "Admin created successfully",
             data: res
-
         })
 
     }catch(err: unknown){

@@ -11,7 +11,6 @@ export async function createAdminAccount(
   }
 ) {
   try {
-    // 1️⃣ Check super-admin exists
     const superAdminRef = await fastify.db
       .collection("admins")
       .doc(body.superAdminId)
@@ -26,14 +25,12 @@ export async function createAdminAccount(
       .join(" ")
       .trim() || body.email;
 
-    // 2️⃣ Create Firebase Auth user with provided password
     const userRecord = await fastify.firebaseAuthSdk.createUser({
       email: body.email,
       password: body.password,
       displayName,
     });
 
-    // 3️⃣ Save admin in Firestore with simplified shape (no email verification)
     await fastify.db.collection("admins").doc(userRecord.uid).set({
       adminId: userRecord.uid,
       email: body.email,
