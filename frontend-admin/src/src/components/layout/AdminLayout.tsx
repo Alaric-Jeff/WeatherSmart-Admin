@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Menu, X } from 'lucide-react';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 interface AdminLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -11,6 +13,8 @@ export function AdminLayout({
   title
 }: AdminLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { logout } = useAuth();
   return <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} />}
@@ -21,7 +25,7 @@ export function AdminLayout({
         md:translate-x-0
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <Sidebar onClose={() => setMobileMenuOpen(false)} />
+        <Sidebar onClose={() => setMobileMenuOpen(false)} onLogoutRequest={() => setShowLogoutConfirm(true)} />
       </div>
 
       {/* Main Content */}
@@ -41,5 +45,19 @@ export function AdminLayout({
           <div className="max-w-7xl mx-auto w-full">{children}</div>
         </main>
       </div>
+
+      <ConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        title="Sign out"
+        message="Are you sure you want to sign out? You'll be returned to the login screen."
+        confirmText="Sign out"
+        cancelText="Stay logged in"
+        variant="warning"
+      />
     </div>;
 }

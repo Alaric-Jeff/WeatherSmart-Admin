@@ -8,21 +8,31 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load stored session from localStorage
+  // Load stored session from localStorage and keep subscribers in sync
   useEffect(() => {
-    const checkAuth = async () => {
+    const syncUserFromStorage = () => {
+      setLoading(true);
       try {
         const stored = localStorage.getItem('ws_admin_user');
-        if (stored) {
-          setUser(JSON.parse(stored));
-        }
+        setUser(stored ? JSON.parse(stored) : null);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    checkAuth();
+
+    syncUserFromStorage();
+    const handleAuthChange = () => syncUserFromStorage();
+
+    // Listen for auth changes triggered by login/logout (custom) and cross-tab storage updates
+    window.addEventListener('ws-auth-changed', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('ws-auth-changed', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -64,6 +74,9 @@ export function useAuth() {
       setUser(mappedAdmin);
       localStorage.setItem('ws_admin_user', JSON.stringify(mappedAdmin));
 
+      // Notify other hook instances to refresh state without reload
+      window.dispatchEvent(new Event('ws-auth-changed'));
+
       return mappedAdmin;
     } catch (err: any) {
       setError(err.message || 'Failed to login');
@@ -87,6 +100,9 @@ export function useAuth() {
     setUser(null);
     localStorage.removeItem('ws_admin_user');
     localStorage.removeItem('idToken'); // Remove the token on logout
+
+    // Broadcast the change so ProtectedRoute re-renders immediately
+    window.dispatchEvent(new Event('ws-auth-changed'));
   };
 
   const updateProfile = async (data: Partial<Admin>) => {
