@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { RefreshCw } from 'lucide-react';
+import { registerDevice } from '../../../api/devices/register-device';
 interface CreateDeviceModalProps {
   isOpen: boolean;
   onClose: () => void;
