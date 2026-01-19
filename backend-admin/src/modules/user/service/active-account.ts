@@ -3,7 +3,7 @@ import { ServiceError } from "../../../error/service-error.js";
 import type { disableUserAccountService } from "../schemas/disable-account-schema.js";
 import { createAuditFunction } from "../../audit-logs/create-audit-log.js";
 
-export async function disableUserAccount(
+export async function activateUserAccount(
     fastify: FastifyInstance,
     body: disableUserAccountService
 ){
@@ -23,7 +23,7 @@ export async function disableUserAccount(
         await fastify.firebaseAuthSdk.updateUser(body.userId, {disabled: true})
         await createAuditFunction(fastify, {
             adminId: body.adminId,
-            action: "User Disabled",
+            action: "User Activated",
             target: body.userId,
             reason: body.reason
         })

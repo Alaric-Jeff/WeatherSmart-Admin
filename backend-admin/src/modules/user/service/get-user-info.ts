@@ -6,10 +6,10 @@ export async function getUserInfoService(
   fastify: FastifyInstance,
   body: userUuidType
 ) {
-  const { uuid } = body;
+  const { userId } = body;
 
   try {
-    const snapshot = await fastify.db.collection("users").doc(uuid).get();
+    const snapshot = await fastify.db.collection("users").doc(userId).get();
 
     if (!snapshot.exists) {
       throw new ServiceError(404, "User not found");
@@ -29,6 +29,7 @@ export async function getUserInfoService(
       photoUrl: data.photoUrl ?? null,
       address: data.address ?? null,
       devices: Array.isArray(data.devices) ? data.devices : [],
+      status: data.status,
       createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
       updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? null
     };

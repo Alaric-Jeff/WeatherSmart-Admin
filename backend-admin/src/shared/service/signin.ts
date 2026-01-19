@@ -31,10 +31,14 @@ export async function signin(
 
     return {
       uid,
+      firstName: adminData.firstName ?? "",
+      lastName: adminData.lastName ?? "",
+      middleName: adminData.middleName ?? "",
       email: decoded.email,
       role: adminData.role,
       displayName: `${adminData.firstName} ${adminData.lastName}`,
       emailVerified: true,
+      status: adminData.status
     };
 
   } catch (err) {

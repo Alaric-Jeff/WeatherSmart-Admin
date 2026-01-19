@@ -1,19 +1,20 @@
-import type { FastifyRequest, FastifyReply } from "fastify";
+import { type FastifyRequest, type FastifyReply, fastify } from "fastify";
 import { getUserInfoService } from "../service/get-user-info.js";
 import type { userUuidType } from "../schemas/user-uuid.js";
 import { ServiceError } from "../../../error/service-error.js";
 
 export async function getUserInfoController(
-    req: FastifyRequest<{Querystring: userUuidType}>,
+    req: FastifyRequest<{Params: userUuidType}>,
     reply: FastifyReply
 ){
 
     const {
-        uuid
-    } = req.query;
+        userId
+    } = req.params;
 
     try{
-        const userInfo = await getUserInfoService(req.server, {uuid});
+        req.log.info(`current userId in controller: ${userId}`)
+        const userInfo = await getUserInfoService(req.server, {userId});
 
         return reply.code(200).send({
             message: "Successfully fetched user info",

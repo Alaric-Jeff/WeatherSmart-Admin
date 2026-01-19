@@ -9,12 +9,13 @@ export async function assignDeviceController(
 ) {
   try {
     if (!req.user?.uid) {
+      req.log.info(`No current user: ${req.user?.uid}`)
       throw new ServiceError(401, "Unauthorized");
     }
 
     const { deviceId, userId, reason } = req.body;
     const adminId = req.user.uid;
-
+    req.log.info(`admin id fetched: ${adminId}`)    
     const normalizedReason = reason ?? "";
 
     await assignDevice(req.server, {
@@ -29,6 +30,7 @@ export async function assignDeviceController(
     });
 
   } catch (err: unknown) {
+
     if (err instanceof ServiceError) {
       return reply.code(err.statusCode).send({
         message: err.message,
