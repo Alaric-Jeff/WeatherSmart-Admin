@@ -208,11 +208,11 @@ export function AdminsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First Name (optional)" value={newAdmin.firstName} onChange={e => setNewAdmin({
+              <Input label="First Name" value={newAdmin.firstName} onChange={e => setNewAdmin({
             ...newAdmin,
             firstName: e.target.value
           })} placeholder="John" />
-              <Input label="Last Name (optional)" value={newAdmin.lastName} onChange={e => setNewAdmin({
+              <Input label="Last Name" value={newAdmin.lastName} onChange={e => setNewAdmin({
             ...newAdmin,
             lastName: e.target.value
           })} placeholder="Doe" />
