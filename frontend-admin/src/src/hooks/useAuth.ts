@@ -25,52 +25,53 @@ export function useAuth() {
     checkAuth();
   }, []);
 
-const login = async (email: string, password: string) => {
-  setLoading(true);
-  setError(null);
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    // 1️⃣ Sign in with Firebase Auth
-    const idToken = await frontendSignIn(email, password);
+    try {
+      // 1️⃣ Sign in with Firebase Auth
+      const idToken = await frontendSignIn(email, password);
 
-    // 2️⃣ Verify admin role with backend
-    const backendData = await adminSignIn(idToken);
-    console.log('Raw backend response:', backendData);
+      // 2️⃣ Store the ID token in localStorage
+      localStorage.setItem('idToken', idToken);
 
-    // Extract the actual user object
-    const userData = backendData.data;
-    console.log('Mapped backend data:', userData);
+      // 3️⃣ Verify admin role with backend
+      const backendData = await adminSignIn(idToken);
+      console.log('Raw backend response:', backendData);
 
-    // 3️⃣ Map backendData to match Admin type
-    const mappedAdmin: Admin = {
-      adminId: userData.uid ?? '', // uid from backend
-      email: userData.email ?? '',
-      firstName: userData.displayName?.split(' ')[0] ?? '',
-      lastName: userData.displayName?.split(' ').slice(1).join(' ') ?? '',
-      role: userData.role,
-      status: 'active',
-      authMethod: 'email',
-      createdDate: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-    };
+      // Extract the actual user object
+      const userData = backendData.data;
+      console.log('Mapped backend data:', userData);
 
-    console.log('Mapped admin object:', mappedAdmin);
+      // 4️⃣ Map backendData to match Admin type
+      const mappedAdmin: Admin = {
+        adminId: userData.uid ?? '', // uid from backend
+        email: userData.email ?? '',
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        middleName: userData.middleName ? userData.middleName : "",
+        role: userData.role,
+        status: 'active',
+        authMethod: 'email',
+        createdDate: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+      };
 
-    // 4️⃣ Store in state & localStorage
-    setUser(mappedAdmin);
-    localStorage.setItem('ws_admin_user', JSON.stringify(mappedAdmin));
+      console.log('Mapped admin object:', mappedAdmin);
 
-    return mappedAdmin;
-  } catch (err: any) {
-    setError(err.message || 'Failed to login');
-    throw err;
-  } finally {
-    setLoading(false);
-  }
-};
+      // 5️⃣ Store in state & localStorage
+      setUser(mappedAdmin);
+      localStorage.setItem('ws_admin_user', JSON.stringify(mappedAdmin));
 
-
-
+      return mappedAdmin;
+    } catch (err: any) {
+      setError(err.message || 'Failed to login');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Optional: keep Google login for future
   const loginWithGoogle = async () => {
@@ -85,6 +86,7 @@ const login = async (email: string, password: string) => {
   const logout = async () => {
     setUser(null);
     localStorage.removeItem('ws_admin_user');
+    localStorage.removeItem('idToken'); // Remove the token on logout
   };
 
   const updateProfile = async (data: Partial<Admin>) => {
@@ -92,6 +94,11 @@ const login = async (email: string, password: string) => {
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     localStorage.setItem('ws_admin_user', JSON.stringify(updatedUser));
+  };
+
+  // Helper function to get the current ID token
+  const getIdToken = () => {
+    return localStorage.getItem('idToken');
   };
 
   return {
@@ -102,6 +109,7 @@ const login = async (email: string, password: string) => {
     loginWithGoogle,
     logout,
     updateProfile,
+    getIdToken, // Export this so other components can access the token
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super-admin',
   };

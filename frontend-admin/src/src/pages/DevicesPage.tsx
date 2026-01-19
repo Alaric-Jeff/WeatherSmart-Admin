@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -8,20 +8,16 @@ import { AssignDeviceModal } from '../components/devices/AssignDeviceModal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
-import { useDevices } from '../hooks/useDevices';
 import { Plus, Link as LinkIcon, Unlink, Users, Edit3, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Device } from '../lib/types';
+import { getDevices } from '../../api/devices/get-devices';
+import { getUsers } from '../../api/users/get-users';
+import { assignDevice } from '../../api/devices/assign-device';
+
 export function DevicesPage() {
-  const {
-    devices,
-    loading,
-    createDevice,
-    assignDevice,
-    unassignDevice,
-    updateDevice,
-    deleteDevice
-  } = useDevices();
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
@@ -40,38 +36,111 @@ export function DevicesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const filteredDevices = devices.filter((device: Device) => device.macId.toLowerCase().includes(searchTerm.toLowerCase()) || device.userNames && device.userNames.some((name: string) => name.toLowerCase().includes(searchTerm.toLowerCase())));
+
+  // Fetch devices on mount
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  const fetchDevices = async () => {
+    setLoading(true);
+    try {
+      // Fetch both devices and users in parallel
+      const [devicesData, usersData] = await Promise.all([
+        getDevices(),
+        getUsers()
+      ]);
+
+      // Create a map of userId -> user display name for quick lookup
+      const userMap = new Map(
+        usersData.map((user: any) => {
+          const displayName = user.displayName || 
+                            `${user.firstName || ''} ${user.lastName || ''}`.trim() || 
+                            user.email || 
+                            'Unknown User';
+          return [user.uuid, displayName];
+        })
+      );
+      
+      // Transform API response to match the Device type
+      const transformedDevices = devicesData.map((device: any) => {
+        // connectedUser is an array of user IDs (strings)
+        const userIds = Array.isArray(device.connectedUser) ? device.connectedUser : [];
+        
+        // Map user IDs to user names using the userMap
+        const userNames = userIds.map((userId: string) => 
+          userMap.get(userId) || 'Unknown User'
+        );
+
+        return {
+          deviceId: device.uuid,
+          macId: device.macId,
+          userIds: userIds,
+          userNames: userNames,
+          createdDate: device.createdAt,
+          updatedDate: device.updatedAt
+        };
+      });
+      
+      setDevices(transformedDevices);
+    } catch (error) {
+      toast.error('Failed to load devices');
+      console.error('Error loading devices:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredDevices = devices.filter((device: Device) => 
+    device.macId.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    device.userNames && device.userNames.some((name: string) => 
+      name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
   const handleCreate = async (macId: string) => {
     try {
-      await createDevice(macId);
+      // TODO: Call your create device API here
+      // await createDeviceAPI(macId);
+      
       toast.success('Device registered successfully');
       setIsCreateModalOpen(false);
+      await fetchDevices();
     } catch (error) {
       toast.error('Failed to register device');
     }
   };
+
   const handleAssign = async (userId: string, userName: string) => {
     if (!selectedDevice) return;
+    
     try {
-      await assignDevice(selectedDevice, userId, userName);
+      await assignDevice(userId, selectedDevice, undefined);
       toast.success(`Device assigned to ${userName}`);
+      await fetchDevices();
     } catch (error) {
       toast.error('Failed to assign device');
+      console.error('Error assigning device:', error);
     }
   };
+
   const handleUnassign = async () => {
     if (!unassignAction) return;
     setIsProcessing(true);
     try {
-      await unassignDevice(unassignAction.deviceId, unassignAction.userId);
+      // TODO: Call your unassign device API here
+      // await unassignDeviceAPI(unassignAction.deviceId, unassignAction.userId);
+      
       toast.success(`Device unassigned from ${unassignAction.userName}`);
       setUnassignAction(null);
+      await fetchDevices();
     } catch (error) {
       toast.error('Failed to unassign device');
     } finally {
       setIsProcessing(false);
     }
   };
+
   const openAssignModal = (deviceId: string) => {
     setSelectedDevice(deviceId);
     setIsAssignModalOpen(true);
@@ -87,12 +156,15 @@ export function DevicesPage() {
     if (!editTarget || !editMac || !editReason.trim()) return;
     setIsSavingEdit(true);
     try {
-      await updateDevice(editTarget.deviceId, editMac, editReason.trim());
+      // TODO: Call your update device API here
+      // await updateDeviceAPI(editTarget.deviceId, editMac, editReason.trim());
+      
       toast.success('Device updated');
       setEditTarget(null);
       setEditMac('');
       setEditReason('');
       setIsEditConfirmOpen(false);
+      await fetchDevices();
     } catch (error) {
       toast.error('Failed to update device');
     } finally {
@@ -104,17 +176,22 @@ export function DevicesPage() {
     if (!deleteTarget || !deleteReason.trim()) return;
     setIsDeleting(true);
     try {
-      await deleteDevice(deleteTarget.deviceId, deleteReason.trim());
+      // TODO: Call your delete device API here
+      // await deleteDeviceAPI(deleteTarget.deviceId, deleteReason.trim());
+      
       toast.success('Device deleted');
       setDeleteTarget(null);
       setDeleteReason('');
+      await fetchDevices();
     } catch (error) {
       toast.error('Failed to delete device');
     } finally {
       setIsDeleting(false);
     }
   };
-  return <AdminLayout title="Device Management">
+
+  return (
+    <AdminLayout title="Device Management">
       <div className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-lg">
         <div className="flex items-start gap-3">
           <Users className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -130,9 +207,16 @@ export function DevicesPage() {
 
       <div className="flex justify-between items-center mb-6">
         <div className="w-1/3">
-          <SearchInput placeholder="Search by MAC ID or User..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <SearchInput 
+            placeholder="Search by MAC ID or User..." 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button 
+          onClick={() => setIsCreateModalOpen(true)} 
+          leftIcon={<Plus className="h-4 w-4" />}
+        >
           Register Device
         </Button>
       </div>
@@ -157,102 +241,232 @@ export function DevicesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? <tr>
+              {loading ? (
+                <tr>
                   <td colSpan={4} className="px-6 py-4 text-center">
                     Loading devices...
                   </td>
-                </tr> : filteredDevices.length === 0 ? <tr>
+                </tr>
+              ) : filteredDevices.length === 0 ? (
+                <tr>
                   <td colSpan={4} className="px-6 py-4 text-center">
                     No devices found
                   </td>
-                </tr> : filteredDevices.map((device: Device) => <tr key={device.deviceId} className="hover:bg-gray-50">
+                </tr>
+              ) : (
+                filteredDevices.map((device: Device) => (
+                  <tr key={device.deviceId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
                       {device.macId}
                     </td>
                     <td className="px-6 py-4">
-                      {device.userIds.length === 0 ? <span className="text-gray-400 italic text-sm">
+                      {device.userIds.length === 0 ? (
+                        <span className="text-gray-400 italic text-sm">
                           No users assigned
-                        </span> : <div className="space-y-1">
-                          {device.userNames?.map((userName: string, idx: number) => <div key={idx} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                        </span>
+                      ) : (
+                        <div className="space-y-1">
+                          {device.userNames?.map((userName: string, idx: number) => (
+                            <div 
+                              key={idx} 
+                              className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm"
+                            >
                               <span className="text-gray-700">{userName}</span>
-                              <button onClick={() => setUnassignAction({
-                      deviceId: device.deviceId,
-                      userId: device.userIds[idx],
-                      userName
-                    })} className="text-red-600 hover:text-red-800 ml-2" title="Unassign from this user">
+                              <button
+                                onClick={() =>
+                                  setUnassignAction({
+                                    deviceId: device.deviceId,
+                                    userId: device.userIds[idx],
+                                    userName
+                                  })
+                                }
+                                className="text-red-600 hover:text-red-800 ml-2"
+                                title="Unassign from this user"
+                              >
                                 <Unlink className="h-3 w-3" />
                               </button>
-                            </div>)}
-                        </div>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(device.createdDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-900" onClick={() => openAssignModal(device.deviceId)} title="Assign to User">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-900"
+                          onClick={() => openAssignModal(device.deviceId)}
+                          title="Assign to User"
+                        >
                           <LinkIcon className="h-4 w-4 mr-1" /> Assign
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-800" onClick={() => openEditModal(device)} title="Edit MAC">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-amber-600 hover:text-amber-800"
+                          onClick={() => openEditModal(device)}
+                          title="Edit MAC"
+                        >
                           <Edit3 className="h-4 w-4 mr-1" /> Edit
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800" onClick={() => {
-                  setDeleteTarget(device);
-                  setDeleteReason('');
-                }} title="Delete device">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-800"
+                          onClick={() => {
+                            setDeleteTarget(device);
+                            setDeleteReason('');
+                          }}
+                          title="Delete device"
+                        >
                           <Trash2 className="h-4 w-4 mr-1" /> Delete
                         </Button>
                       </div>
                     </td>
-                  </tr>)}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </Card>
 
-      <CreateDeviceModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreate} />
+      <CreateDeviceModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreate}
+      />
 
-      <AssignDeviceModal isOpen={isAssignModalOpen} onClose={() => {
-      setIsAssignModalOpen(false);
-      setSelectedDevice(null);
-    }} onAssign={handleAssign} currentUserIds={selectedDevice ? devices.find((d: Device) => d.deviceId === selectedDevice)?.userIds || [] : []} />
+      <AssignDeviceModal
+        isOpen={isAssignModalOpen}
+        onClose={() => {
+          setIsAssignModalOpen(false);
+          setSelectedDevice(null);
+        }}
+        onAssign={handleAssign}
+        currentUserIds={
+          selectedDevice
+            ? devices.find((d: Device) => d.deviceId === selectedDevice)?.userIds || []
+            : []
+        }
+      />
 
-      <ConfirmDialog isOpen={!!unassignAction} onClose={() => setUnassignAction(null)} onConfirm={handleUnassign} title="Unassign Device" message={`Are you sure you want to unassign this device from ${unassignAction?.userName}? Other users will still have access to this device.`} confirmText="Unassign" variant="warning" isLoading={isProcessing} />
+      <ConfirmDialog
+        isOpen={!!unassignAction}
+        onClose={() => setUnassignAction(null)}
+        onConfirm={handleUnassign}
+        title="Unassign Device"
+        message={`Are you sure you want to unassign this device from ${unassignAction?.userName}? Other users will still have access to this device.`}
+        confirmText="Unassign"
+        variant="warning"
+        isLoading={isProcessing}
+      />
 
-      <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Edit MAC Address">
+      <Modal
+        isOpen={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        title="Edit MAC Address"
+      >
         <div className="space-y-4">
-          <Input label="MAC Address" value={editMac} onChange={e => setEditMac(e.target.value)} placeholder="AA:BB:CC:11:22:33" required pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$" error={editMac && !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) ? 'Invalid MAC format' : undefined} />
+          <Input
+            label="MAC Address"
+            value={editMac}
+            onChange={e => setEditMac(e.target.value)}
+            placeholder="AA:BB:CC:11:22:33"
+            required
+            pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+            error={
+              editMac && !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac)
+                ? 'Invalid MAC format'
+                : undefined
+            }
+          />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for update</label>
-            <textarea className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={editReason} onChange={e => setEditReason(e.target.value)} placeholder="Describe why this MAC is being updated" rows={3} required />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason for update
+            </label>
+            <textarea
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={editReason}
+              onChange={e => setEditReason(e.target.value)}
+              placeholder="Describe why this MAC is being updated"
+              rows={3}
+              required
+            />
           </div>
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={() => setEditTarget(null)}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => setIsEditConfirmOpen(true)} disabled={!editMac || !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) || !editReason.trim() || editMac === editTarget?.macId}>
+            <Button
+              type="button"
+              onClick={() => setIsEditConfirmOpen(true)}
+              disabled={
+                !editMac ||
+                !/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(editMac) ||
+                !editReason.trim() ||
+                editMac === editTarget?.macId
+              }
+            >
               Confirm
             </Button>
           </div>
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={isEditConfirmOpen && !!editTarget} onClose={() => setIsEditConfirmOpen(false)} onConfirm={handleUpdateMac} title="Confirm Update" message={`Update MAC from ${editTarget?.macId} to ${editMac}?\nReason: ${editReason}`} confirmText="Confirm Update" variant="warning" isLoading={isSavingEdit} />
+      <ConfirmDialog
+        isOpen={isEditConfirmOpen && !!editTarget}
+        onClose={() => setIsEditConfirmOpen(false)}
+        onConfirm={handleUpdateMac}
+        title="Confirm Update"
+        message={`Update MAC from ${editTarget?.macId} to ${editMac}?\nReason: ${editReason}`}
+        confirmText="Confirm Update"
+        variant="warning"
+        isLoading={isSavingEdit}
+      />
 
-      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Device" maxWidth="sm">
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Device"
+        maxWidth="sm"
+      >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Delete device {deleteTarget?.macId}? This cannot be undone.</p>
+          <p className="text-sm text-gray-600">
+            Delete device {deleteTarget?.macId}? This cannot be undone.
+          </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for deletion</label>
-            <textarea className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" value={deleteReason} onChange={e => setDeleteReason(e.target.value)} placeholder="Describe why this device is being removed" rows={3} required />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason for deletion
+            </label>
+            <textarea
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              value={deleteReason}
+              onChange={e => setDeleteReason(e.target.value)}
+              placeholder="Describe why this device is being removed"
+              rows={3}
+              required
+            />
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete} isLoading={isDeleting} disabled={!deleteReason.trim()}>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              isLoading={isDeleting}
+              disabled={!deleteReason.trim()}
+            >
               Delete
             </Button>
           </div>
         </div>
       </Modal>
-    </AdminLayout>;
+    </AdminLayout>
+  );
 }

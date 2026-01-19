@@ -9,13 +9,12 @@ export async function getDeviceService(
 
         return devices.docs.map(doc => {
             const data = doc.data() ?? {}
-
             return {
                 uuid: doc.id,
                 macId: data.macId,
                 connectedUser: Array.isArray(data.connectedUsers) ? data.connectedUsers : [],
-                createdAt: data.createdAt,
-                updatedAt: data.updatedAt
+                createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
+                updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? null
             }
         })
 
