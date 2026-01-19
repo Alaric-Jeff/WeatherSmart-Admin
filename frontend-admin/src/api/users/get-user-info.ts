@@ -13,8 +13,22 @@ export async function getUserInfo(userId: string) {
     }
 
     const json = await res.json();
-    console.log(json.data);
-    return json.data;
+    console.log('Raw API response:', json.data);
+    
+    // Transform if needed - adjust based on your actual API response structure
+    const transformedData = {
+      uuid: json.data.uuid || json.data.id,
+      displayName: json.data.displayName,
+      firstName: json.data.firstName,
+      lastName: json.data.lastName,
+      email: json.data.email,
+      status: json.data.status,
+      createdAt: json.data.createdAt,
+      devices: Array.isArray(json.data.devices) ? json.data.devices : [],
+    };
+    
+    console.log('Transformed data:', transformedData);
+    return transformedData;
   } catch (err: unknown) {
     console.log(`Error occurred in getting user info:`, err);
     throw err;
