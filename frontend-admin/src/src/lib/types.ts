@@ -37,6 +37,7 @@ export interface Ticket {
 }
 export interface Admin {
   adminId: string;
+  uid?: string; // Firebase UID
   email: string;
   firstName?: string | null;
   lastName?: string | null;

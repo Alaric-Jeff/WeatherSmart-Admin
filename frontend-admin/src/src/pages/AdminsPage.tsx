@@ -115,6 +115,9 @@ export function AdminsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  UID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -133,11 +136,11 @@ export function AdminsPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={6} className="px-6 py-4 text-center">
                     Loading admins...
                   </td>
                 </tr> : filteredAdmins.length === 0 ? <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={6} className="px-6 py-4 text-center">
                     No admins found
                   </td>
                 </tr> : filteredAdmins.map(admin => {
@@ -148,6 +151,11 @@ export function AdminsPage() {
 
                   return (
                     <tr key={admin.adminId} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-mono text-gray-600 truncate max-w-xs" title={admin.uid || 'N/A'}>
+                          {admin.uid ? admin.uid.substring(0, 16) + '...' : 'N/A'}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">

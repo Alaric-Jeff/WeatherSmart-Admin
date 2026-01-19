@@ -4,6 +4,7 @@ import { SignInController } from "../controller/signin-controller.js";
 import { firebaseAuthPreHandler } from "../../plugin/firebase-plug.js";
 import { createAdminAccountController } from "../controller/create-admin-controller.js";
 import { verifyEmailAdminController } from "../controller/verifyAdminController.js";
+import { getAdminsController } from "../controller/get-admins-controller.js";
 
 export function adminRoutes(fastify: FastifyInstance) {
   // Signin route
@@ -25,6 +26,14 @@ export function adminRoutes(fastify: FastifyInstance) {
     },
     preHandler: firebaseAuthPreHandler,
     handler: createAdminAccountController,
+  });
+
+  // Get admins route
+  fastify.route({
+    url: "/get-admins",
+    method: "GET",
+    preHandler: firebaseAuthPreHandler,
+    handler: getAdminsController,
   });
 
   // Verify email route

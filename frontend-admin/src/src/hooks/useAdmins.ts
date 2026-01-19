@@ -1,49 +1,45 @@
 import { useState, useEffect } from 'react';
 import { createAdminAccount, type CreateAdminPayload } from '../../api/shared/create-admin';
+import { getAdminsFromAPI } from '../../api/shared/get-admins';
 import { Admin } from '../lib/types';
-const MOCK_ADMINS: Admin[] = [{
-  adminId: 'admin-123',
-  email: 'admin@weathersmart.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  role: 'super-admin',
-  status: 'active',
-  authMethod: 'email',
-  createdDate: '2023-01-01T00:00:00Z',
-  lastLogin: '2023-06-25T10:30:00Z',
-  phoneNumber: '+1 (555) 123-4567',
-  address: '123 Tech Blvd, Silicon Valley, CA'
-}, {
-  adminId: 'admin-456',
-  email: 'sarah@weathersmart.com',
-  firstName: 'Sarah',
-  lastName: 'Connor',
-  role: 'admin',
-  status: 'active',
-  authMethod: 'google',
-  createdDate: '2023-03-15T09:00:00Z',
-  lastLogin: '2023-06-24T14:15:00Z',
-  phoneNumber: '+1 (555) 987-6543'
-}, {
-  adminId: 'admin-789',
-  email: 'mike@weathersmart.com',
-  firstName: 'Mike',
-  lastName: 'Ross',
-  role: 'admin',
-  status: 'disabled',
-  authMethod: 'email',
-  createdDate: '2023-04-20T11:45:00Z',
-  lastLogin: '2023-05-30T16:20:00Z'
-}];
+
 export function useAdmins() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchAdmins = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setAdmins(MOCK_ADMINS);
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getAdminsFromAPI();
+        
+        // Map the API response to the Admin interface
+        const mappedAdmins: Admin[] = data.map(admin => ({
+          adminId: admin.adminId,
+          uid: admin.uid, // Include Firebase UID
+          email: admin.email,
+          firstName: admin.firstName ?? undefined,
+          lastName: admin.lastName ?? undefined,
+          middleName: admin.middleName ?? undefined,
+          role: admin.role as 'admin' | 'super-admin',
+          status: admin.status as 'active' | 'disabled',
+          authMethod: 'email' as const, // Default to email if not provided
+          createdDate: admin.createdDate ?? new Date().toISOString(),
+          lastLogin: admin.lastLogin ?? new Date().toISOString()
+        }));
+        
+        setAdmins(mappedAdmins);
+      } catch (err) {
+        console.error('Error fetching admins:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch admins');
+        setAdmins([]);
+      } finally {
+        setLoading(false);
+      }
     };
+    
     fetchAdmins();
   }, []);
   const createAdmin = async (data: CreateAdminPayload) => {
@@ -70,7 +66,8 @@ export function useAdmins() {
     return newAdmin;
   };
   const toggleAdminStatus = async (adminId: string) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // This would call an API endpoint to toggle admin status
+    // For now, update local state optimistically
     setAdmins(prev => prev.map(a => {
       if (a.adminId === adminId) {
         return {
@@ -80,10 +77,16 @@ export function useAdmins() {
       }
       return a;
     }));
+    
+    // TODO: Implement actual API call when backend endpoint is ready
+    // Example:
+    // await updateAdminStatus(adminId, newStatus);
   };
+  
   return {
     admins,
     loading,
+    error,
     createAdmin,
     toggleAdminStatus
   };
