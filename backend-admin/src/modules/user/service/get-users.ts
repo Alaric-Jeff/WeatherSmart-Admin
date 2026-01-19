@@ -21,6 +21,7 @@ export async function getUsersService(
     contactNumber: data.contactNumber ?? null,
     photoUrl: data.photoUrl ?? null,
     address: data.address ?? null,
+    status: data.status,
     devices: Array.isArray(data.devices) ? data.devices : [],
     createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
     updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? null

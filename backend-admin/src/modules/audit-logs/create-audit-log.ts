@@ -31,8 +31,8 @@ export async function createAuditFunction(
     body: CreateAuditType       
 ) {
     try {
-        const adminDoc = await fastify.db.collection('admin').doc(body.adminId).get();
-
+        const adminDoc = await fastify.db.collection('admins').doc(body.adminId).get();
+        fastify.log.info(`Fetched admin id: ${body.adminId}`)
         if (!adminDoc.exists) {
             throw new ServiceError(400, "Admin not found");
         }
@@ -40,7 +40,7 @@ export async function createAuditFunction(
         const adminData = adminDoc.data();
         const normalizedReason = body.reason ?? "";
         const audit = await fastify.db.collection('audit_logs').add({
-            performedBy: `${adminData!.firstName} ${adminData!.lastName} (${adminData!.gmail})`,
+            performedBy: `${adminData!.firstName} ${adminData!.lastName} (${adminData!.email})`,
             action: body.action,
             target: body.target,
             reason: normalizedReason,
