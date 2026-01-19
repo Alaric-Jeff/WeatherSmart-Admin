@@ -5,8 +5,9 @@ import { createAuditFunction } from "../../audit-logs/create-audit-log.js";
 export async function deleteDeviceService(
   fastify: FastifyInstance,
   body: {
-    id: string;       
-    adminId: string; 
+    id: string,
+    adminId: string,
+    reason: string
   }
 ) {
   try {
@@ -23,7 +24,8 @@ export async function deleteDeviceService(
     await createAuditFunction(fastify, {
         adminId: body.adminId,
         action: "device deleted",
-        target: deviceData!.macId
+        target: deviceData!.macId,
+        reason: body.reason
     })
 
     await docRef.delete();

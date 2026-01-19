@@ -4,6 +4,7 @@ import { assignDeviceController } from "../controller/assign-device-controller.j
 import { createDeviceController } from "../controller/create-device-controller.js";
 import { deleteDeviceController } from "../controller/delete-device-controller.js";
 
+import { deleteDevice } from "../schema/device-id.js";
 import { deviceId } from "../schema/device-id.js";
 import { macId } from "../schema/device-id.js";
 import { assignDeviceReq } from "../schema/assign-device.js";
@@ -37,7 +38,7 @@ export function deviceModRouter(fastify: FastifyInstance){
         url: "/delete-device",
         method: "POST",
         schema: {
-            body: deviceId
+            body: deleteDevice
         }, preHandler: firebaseAuthPreHandler,
         handler: deleteDeviceController
     })

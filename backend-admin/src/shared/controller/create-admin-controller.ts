@@ -47,7 +47,6 @@ export async function createAdminAccountController(
         return reply.code(200).send({
             message: "Admin created successfully",
             data: res
-
         })
 
     }catch(err: unknown){

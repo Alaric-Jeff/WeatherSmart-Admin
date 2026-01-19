@@ -12,3 +12,10 @@ export const macId = Type.Object({
 })
 
 export type macId = Static<typeof macId>
+
+
+export const deleteDevice = Type.Object({
+    id: Type.String(),
+    reason: Type.String()
+})
+export type deleteDevice = Static<typeof deleteDevice>
