@@ -1,6 +1,7 @@
 import { auth } from "../../firebase/firebase-config";
 
 export interface AdminData {
+  uid?: string; // Firebase UID
   adminId: string;
   email: string;
   firstName?: string | null;
