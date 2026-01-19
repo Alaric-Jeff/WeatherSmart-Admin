@@ -29,6 +29,10 @@ export function AdminDetailPage() {
         </div>
       </AdminLayout>;
   }
+  const displayName = (admin.firstName || admin.lastName)
+    ? `${admin.firstName ?? ''} ${admin.middleName ? `${admin.middleName} ` : ''}${admin.lastName ?? ''}`.replace(/\s+/g, ' ').trim()
+    : admin.email;
+  const initial = displayName.charAt(0).toUpperCase();
   const handleToggleStatus = async () => {
     setIsProcessing(true);
     try {
@@ -53,10 +57,10 @@ export function AdminDetailPage() {
           <Card>
             <div className="flex flex-col items-center text-center pb-6 border-b border-gray-100 mb-6">
               <div className="h-24 w-24 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-3xl font-bold mb-4">
-                {admin.firstName.charAt(0)}
+                {initial}
               </div>
               <h2 className="text-xl font-bold text-gray-900">
-                {admin.firstName} {admin.lastName}
+                {displayName}
               </h2>
               <p className="text-sm text-gray-500 mb-2">{admin.email}</p>
               <div className="flex gap-2 justify-center mt-2">
@@ -114,6 +118,6 @@ export function AdminDetailPage() {
         </div>
       </div>
 
-      <ConfirmDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleToggleStatus} title={admin.status === 'active' ? 'Disable Admin Account' : 'Enable Admin Account'} message={`Are you sure you want to ${admin.status === 'active' ? 'disable' : 'enable'} access for ${admin.firstName} ${admin.lastName}? This will ${admin.status === 'active' ? 'prevent' : 'allow'} them to log in to the system.`} confirmText={admin.status === 'active' ? 'Disable Account' : 'Enable Account'} variant={admin.status === 'active' ? 'danger' : 'primary'} isLoading={isProcessing} />
+      <ConfirmDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleToggleStatus} title={admin.status === 'active' ? 'Disable Admin Account' : 'Enable Admin Account'} message={`Are you sure you want to ${admin.status === 'active' ? 'disable' : 'enable'} access for ${displayName}? This will ${admin.status === 'active' ? 'prevent' : 'allow'} them to log in to the system.`} confirmText={admin.status === 'active' ? 'Disable Account' : 'Enable Account'} variant={admin.status === 'active' ? 'danger' : 'primary'} isLoading={isProcessing} />
     </AdminLayout>;
 }

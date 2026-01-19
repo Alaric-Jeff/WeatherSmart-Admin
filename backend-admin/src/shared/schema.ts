@@ -20,16 +20,20 @@ export type SigninReq = Static<typeof signinReq>;
 // export type SigninReq = Static<typeof signinReq>;
 
 export const createAdminAccountSchema = Type.Object({
-  firstName: Type.String({
-    minLength: 2,
-    maxLength: 64,
-    pattern: "^[A-Za-z]+$"
-  }),
-  lastName: Type.String({
-    minLength: 2,
-    maxLength: 64,
-    pattern: "^[A-Za-z]+$" 
-  }),
+  firstName: Type.Optional(
+    Type.String({
+      minLength: 2,
+      maxLength: 64,
+      pattern: "^[A-Za-z]+$"
+    })
+  ),
+  lastName: Type.Optional(
+    Type.String({
+      minLength: 2,
+      maxLength: 64,
+      pattern: "^[A-Za-z]+$" 
+    })
+  ),
   middleName: Type.Optional(
     Type.String({
       minLength: 2,
@@ -38,7 +42,16 @@ export const createAdminAccountSchema = Type.Object({
     })
   ),
   email: Type.String({
-    pattern: "^[a-zA-Z0-9._%+-]+@gmail\\.com$" 
+    format: "email"
+  }),
+  password: Type.String({
+    minLength: 8,
+    maxLength: 50,
+    pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\-={}\\[\\]|:;\"'<>,.?/]).+$"
+  }),
+  confirmPassword: Type.String({
+    minLength: 8,
+    maxLength: 50
   })
 });
 
