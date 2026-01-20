@@ -1,0 +1,40 @@
+import type { FastifyInstance } from "fastify";
+import { ServiceError } from "../../../error/service-error.js";
+import { createAuditFunction } from "../../audit-logs/create-audit-log.js";
+
+export async function deleteTickets(
+  fastify: FastifyInstance,
+  body: {
+    adminId: string;
+    ticketId: string;
+  }
+) {
+  try {
+    const ticketRef = fastify.db.collection("tickets").doc(body.ticketId);
+    const snapshot = await ticketRef.get();
+
+    if (!snapshot.exists) {
+      throw new ServiceError(404, "Ticket not found");
+    }
+
+    await ticketRef.delete();
+
+    await createAuditFunction(fastify, {
+      adminId: body.adminId,
+      action: "Ticket Deleted",
+      target: body.ticketId
+    });
+
+    return {
+      ticketId: body.ticketId,
+      deleted: true
+    };
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      throw err;
+    }
+
+    fastify.log.error(err);
+    throw new ServiceError(500, "Internal Server Error");
+  }
+}

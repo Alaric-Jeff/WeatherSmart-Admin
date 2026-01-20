@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Trash2, CheckCircle, AlertCircle, Shield, Calendar, ArrowUpDown } from 'lucide-react';
 import { TicketStatus } from '../lib/types';
 import { toast } from 'sonner';
+import { getTickets } from '../../api/tickets/get-tickets';
 export function TicketsPage() {
   const {
     tickets,
