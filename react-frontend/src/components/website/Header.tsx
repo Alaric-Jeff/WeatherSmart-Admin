@@ -40,11 +40,11 @@ export function Header({
     id: 'inquiries',
     label: 'Inquiries'
   }, {
+    id: 'tickets',
+    label: 'Tickets'
+  }, {
     id: 'contact',
     label: 'Contact'
-  }, {
-    id: 'account',
-    label: 'Account'
   }];
 
   const handleNavClick = (id: string) => {
@@ -73,7 +73,7 @@ export function Header({
             {navItems.map(item => <button key={item.id} onClick={() => handleNavClick(item.id)} className={`text-sm font-medium transition-colors hover:text-blue-600 ${currentPage === item.id ? 'text-blue-600' : 'text-gray-600'}`}>
                 {item.label}
               </button>)}
-            {user?.displayName && <span className="text-sm font-semibold text-gray-700">{user.displayName}</span>}
+            {user?.displayName && <button onClick={() => onNavigate('account')} className="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">{user.displayName}</button>}
             {onLogout && <button onClick={onLogout} className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors">
                 Logout
               </button>}
@@ -105,7 +105,10 @@ export function Header({
           }} className={`block w-full text-left text-lg font-medium ${currentPage === item.id ? 'text-blue-600' : 'text-gray-600'}`}>
                   {item.label}
                 </button>)}
-              {user?.displayName && <div className="text-gray-700 font-semibold">{user.displayName}</div>}
+              {user?.displayName && <button onClick={() => {
+            onNavigate('account');
+            setIsMobileMenuOpen(false);
+          }} className="block w-full text-left text-lg font-semibold text-gray-700 hover:text-blue-600 transition-colors">{user.displayName}</button>}
               {onLogout && <button onClick={() => {
             onLogout();
             setIsMobileMenuOpen(false);

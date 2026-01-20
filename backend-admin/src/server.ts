@@ -43,14 +43,8 @@ const PORT = Number(process.env.HTTP_PORT);
 const HOST = process.env.HOST as string;
 
 await server.register(cors, {
-  // Reflect the request origin for any localhost port during development
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (/^http:\/\/localhost:\d+$/.test(origin)) return cb(null, true);
-    return cb(new Error('Not allowed by CORS'), false);
-  },
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
 })
 
 
