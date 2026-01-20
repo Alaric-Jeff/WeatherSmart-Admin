@@ -7,6 +7,7 @@ import { FeaturesPage } from './pages/website/FeaturesPage';
 import { ManualsPage } from './pages/website/ManualsPage';
 import { InquiriesPage } from './pages/website/InquiriesPage';
 import { ContactPage } from './pages/website/ContactPage';
+import { LoginPage } from './pages/website/LoginPage';
 export function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const renderPage = () => {
@@ -23,6 +24,8 @@ export function App() {
         return <InquiriesPage />;
       case 'contact':
         return <ContactPage />;
+      case 'login':
+        return <LoginPage />;
       default:
         return <HomePage onNavigate={setCurrentPage} />;
     }

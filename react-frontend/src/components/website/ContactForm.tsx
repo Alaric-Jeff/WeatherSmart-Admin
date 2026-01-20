@@ -9,19 +9,31 @@ export function ContactForm() {
     type: 'General Inquiry',
     message: ''
   });
+  const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('submitting');
-    // Simulate API call
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({
-        name: '',
-        email: '',
-        type: 'General Inquiry',
-        message: ''
+    fetch(`${API_URL}/api/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to send');
+        return res.json();
+      })
+      .then(() => {
+        setStatus('success');
+        setFormData({
+          name: '',
+          email: '',
+          type: 'General Inquiry',
+          message: ''
+        });
+      })
+      .catch(() => {
+        setStatus('error');
       });
-    }, 1500);
   };
   return <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
       <div className="space-y-6">
@@ -93,6 +105,16 @@ export function ContactForm() {
         y: 0
       }} className="text-center text-green-600 text-sm font-medium">
             Thank you! We'll get back to you shortly.
+          </motion.p>}
+        {status === 'error' && <motion.p initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="text-center text-red-600 text-sm font-medium flex items-center justify-center gap-2">
+            <AlertCircle size={16} />
+            Something went wrong. Please try again later.
           </motion.p>}
       </div>
     </form>;

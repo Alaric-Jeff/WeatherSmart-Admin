@@ -40,7 +40,7 @@ export function Footer({
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
             <ul className="space-y-3">
-              {['Home', 'About', 'Features', 'Manuals'].map(item => <li key={item}>
+              {['Home', 'About', 'Features', 'Manuals', 'Login'].map(item => <li key={item}>
                   <button onClick={() => onNavigate(item.toLowerCase())} className="text-gray-500 hover:text-blue-600 text-sm transition-colors">
                     {item}
                   </button>
