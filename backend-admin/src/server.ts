@@ -41,10 +41,9 @@ const PORT = Number(process.env.HTTP_PORT);
 const HOST = process.env.HOST as string;
 
 await server.register(cors, {
-  origin: 'http://localhost:5173', 
-  methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'], 
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'],
 })
-
 
 try {
   await server.listen({
