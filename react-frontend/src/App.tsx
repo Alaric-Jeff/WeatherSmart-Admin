@@ -10,6 +10,7 @@ import { ContactPage } from './pages/website/ContactPage';
 import { LoginPage } from './pages/website/LoginPage';
 import { AccountSettingsPage } from './pages/website/AccountSettingsPage';
 import { TicketsPage } from './pages/website/TicketsPage';
+import { ViewTicketsPage } from './pages/website/ViewTicketsPage';
 interface StoredUser {
   uid?: string;
   email?: string;
@@ -72,7 +73,9 @@ export function App() {
       case 'contact':
         return <ContactPage />;
       case 'tickets':
-        return <TicketsPage user={user} />;
+        return <TicketsPage user={user} onNavigate={handleNavigate} />;
+      case 'view-tickets':
+        return <ViewTicketsPage user={user} />;
       case 'account':
         return <AccountSettingsPage onNavigate={setCurrentPage} user={user} />;
       case 'login':

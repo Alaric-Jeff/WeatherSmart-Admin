@@ -41,7 +41,10 @@ export function Header({
     label: 'Inquiries'
   }, {
     id: 'tickets',
-    label: 'Tickets'
+    label: 'Submit Ticket'
+  }, {
+    id: 'view-tickets',
+    label: 'My Tickets'
   }, {
     id: 'contact',
     label: 'Contact'

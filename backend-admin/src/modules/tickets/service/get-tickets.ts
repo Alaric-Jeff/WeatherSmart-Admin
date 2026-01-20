@@ -10,9 +10,10 @@ export async function getTickets(fastify: FastifyInstance) {
             const data = doc.data() ?? {};
 
             return {
-                ticketId: data.id,
-                userName: data.reportedBy?.name ?? data.reportedBy ?? "Unknown User",
-                userEmail: data.reportedBy?.email ?? "",
+                ticketId: doc.id,
+                userId: data.userId,
+                userName: data.userName ?? data.reportedBy?.name ?? data.reportedBy ?? "Unknown User",
+                userEmail: data.email ?? data.reportedBy?.email ?? "",
                 description: data.description ?? data.notes ?? "",
                 issueType: data.issueType ?? data.type ?? "general",
                 notes: data.notes ?? "",

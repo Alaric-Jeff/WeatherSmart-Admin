@@ -9,11 +9,12 @@ interface TicketsPageProps {
     displayName?: string;
     email?: string;
   } | null;
+  onNavigate?: (page: string) => void;
 }
 
 const ISSUE_TYPES = ['Sensor', 'Software', 'Hardware'];
 
-export function TicketsPage({ user }: TicketsPageProps) {
+export function TicketsPage({ user, onNavigate }: TicketsPageProps) {
   const [issueType, setIssueType] = useState<string>(ISSUE_TYPES[0]);
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
@@ -232,10 +233,21 @@ export function TicketsPage({ user }: TicketsPageProps) {
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
-                      className="p-4 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm flex items-center gap-2"
+                      className="space-y-3"
                     >
-                      <CheckCircle size={16} />
-                      <span>Thanks! We logged your issue and will update you soon.</span>
+                      <div className="p-4 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm flex items-center gap-2">
+                        <CheckCircle size={16} />
+                        <span>Thanks! We logged your issue and will update you soon.</span>
+                      </div>
+                      {onNavigate && (
+                        <button
+                          onClick={() => onNavigate('view-tickets')}
+                          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all flex items-center justify-center gap-2"
+                        >
+                          <Ticket size={18} />
+                          <span>View My Tickets</span>
+                        </button>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
