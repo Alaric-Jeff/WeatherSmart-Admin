@@ -47,7 +47,6 @@ await server.register(cors, {
   methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'],
 })
 
-
 try {
   await server.listen({
     port: PORT,

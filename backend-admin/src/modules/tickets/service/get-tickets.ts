@@ -16,7 +16,6 @@ export async function getTickets(fastify: FastifyInstance) {
                 userEmail: data.email ?? data.reportedBy?.email ?? "",
                 description: data.description ?? data.notes ?? "",
                 issueType: data.issueType ?? data.type ?? "general",
-                notes: data.notes ?? "",
                 status: data.status,
                 createdDate: data.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
                 updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? null

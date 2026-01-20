@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { ServiceError } from "../../../error/service-error.js";                         
+import { Timestamp } from "firebase-admin/firestore";
 export async function getAuditLogs(
     fastify: FastifyInstance
 ){
@@ -10,11 +11,11 @@ export async function getAuditLogs(
             const data = doc.data();
 
             return {
-                id: data.id,
+                id: doc.id,
                 performedBy: data.performedBy,
                 action: data.action,
                 target: data.target,
-                createdAt: data.createdAt
+                timestamp: data.timestamp
             }
         })
 

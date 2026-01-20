@@ -5,8 +5,6 @@ import { disableUserAccountReq } from "../schemas/disable-account-schema.js";
 import { sendUserPasswordResetController } from "../controller/send-password-controller.js";
 import { firebaseAuthPreHandler } from "../../../plugin/firebase-plug.js";
 import { activateAccountController } from "../controller/activate-account-controller.js";
-import { updateUserController } from "../controller/update-user-controller.js";
-import { updateUserSchema } from "../schemas/update-user-schema.js";
 
 export function userModRoutes(fastify: FastifyInstance){
     fastify.route({
@@ -36,7 +34,7 @@ export function userModRoutes(fastify: FastifyInstance){
         schema: {
             body: disableUserAccountReq 
         }, preHandler: firebaseAuthPreHandler,
-        handler: getUserInfoController
+        handler: disableAccountController
     })
 
     fastify.route({
