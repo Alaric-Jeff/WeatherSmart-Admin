@@ -112,12 +112,15 @@ export function TicketsPage() {
 
     return sorted;
   }, [tickets, statusFilter, dateFilter, customStartDate, customEndDate, sortOrder, searchQuery]);
+
+  const statusLabel = (s: TicketStatus) => s === 'unresolved' ? 'Open' : s === 'resolving' ? 'In Progress' : 'Resolved';
+
   const handleStatusUpdate = async () => {
     if (!statusChangeAction) return;
     setIsProcessing(true);
     try {
       await updateStatus(statusChangeAction.ticketId, statusChangeAction.status);
-      toast.success(`Ticket marked as ${statusChangeAction.status}`);
+      toast.success(`Ticket marked as ${statusLabel(statusChangeAction.status)}`);
       setStatusChangeAction(null);
     } catch (error) {
       toast.error('Failed to update ticket status');
@@ -351,29 +354,27 @@ export function TicketsPage() {
 
                   {/* Bottom row actions */}
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
-                    {ticket.status !== 'resolved' && (
-                      <>
-                        {ticket.status === 'unresolved' && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => setStatusChangeAction({ ticketId: ticket.ticketId, status: 'resolving' })}
-                            className="flex-1 sm:flex-none justify-center"
-                            leftIcon={<AlertCircle className="h-4 w-4" />}
-                          >
-                            Start Work
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => setStatusChangeAction({ ticketId: ticket.ticketId, status: 'resolved' })}
-                          className="flex-1 sm:flex-none justify-center"
-                          leftIcon={<CheckCircle className="h-4 w-4" />}
-                        >
-                          Resolve
-                        </Button>
-                      </>
+                    {ticket.status === 'unresolved' && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setStatusChangeAction({ ticketId: ticket.ticketId, status: 'resolving' })}
+                        className="flex-1 sm:flex-none justify-center"
+                        leftIcon={<AlertCircle className="h-4 w-4" />}
+                      >
+                        Start Work
+                      </Button>
+                    )}
+                    {ticket.status === 'resolving' && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => setStatusChangeAction({ ticketId: ticket.ticketId, status: 'resolved' })}
+                        className="flex-1 sm:flex-none justify-center"
+                        leftIcon={<CheckCircle className="h-4 w-4" />}
+                      >
+                        Resolve
+                      </Button>
                     )}
                     {isSuperAdmin && (
                       <Button
@@ -406,9 +407,13 @@ export function TicketsPage() {
         isOpen={!!statusChangeAction} 
         onClose={() => setStatusChangeAction(null)} 
         onConfirm={handleStatusUpdate} 
-        title="Update Ticket Status" 
-        message={`Are you sure you want to mark this ticket as "${statusChangeAction?.status}"? This action will be logged in the audit trail.`} 
-        confirmText="Update Status" 
+        title={statusChangeAction?.status === 'resolving' ? 'Start Work on Ticket' : 'Resolve Ticket'} 
+        message={
+          statusChangeAction?.status === 'resolving'
+            ? 'Move this ticket to In Progress? This will be logged in the audit trail.'
+            : 'Mark this ticket as Resolved? This will be logged in the audit trail.'
+        } 
+        confirmText={statusChangeAction?.status === 'resolving' ? 'Start Work' : 'Resolve'} 
         variant="primary" 
         isLoading={isProcessing} 
       />
@@ -418,7 +423,7 @@ export function TicketsPage() {
         onClose={() => setTicketToDelete(null)} 
         onConfirm={handleDelete} 
         title="Delete Ticket (Super-Admin)" 
-        message="Are you sure you want to permanently delete this ticket? This action cannot be undone and will be logged in the audit trail." 
+        message={`This will permanently delete ticket ${ticketToDelete ? '#'+ticketToDelete.slice(0,12) : ''}. This cannot be undone and will be logged in the audit trail.`} 
         confirmText="Delete Ticket" 
         variant="danger" 
         isLoading={isProcessing} 
