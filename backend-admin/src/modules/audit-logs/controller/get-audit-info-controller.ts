@@ -3,10 +3,10 @@ import { ServiceError } from "../../../error/service-error.js";
 import { getAuditInfo } from "../service/get-audit-log-info.js";
 
 export async function getAuditInfoController(
-    req: FastifyRequest<{Querystring: {id: string}}>,
+    req: FastifyRequest<{Params: {id: string}}>,
     reply: FastifyReply
 ){
-    const {id} = req.query
+    const {id} = req.params
     try{
 
         const auditInfo = await getAuditInfo(req.server, {id});

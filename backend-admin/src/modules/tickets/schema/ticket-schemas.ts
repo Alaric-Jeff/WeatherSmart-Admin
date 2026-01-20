@@ -4,7 +4,6 @@ export const CreateTicketBody = Type.Object({
   userId: Type.String(),
   description: Type.String({ minLength: 1 }),
   issueType: Type.String({ minLength: 1 }),
-  notes: Type.String()
 });
 
 export type CreateTicketBodyType = Static<typeof CreateTicketBody>;
