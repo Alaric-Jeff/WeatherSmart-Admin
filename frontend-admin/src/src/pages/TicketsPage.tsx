@@ -28,6 +28,7 @@ export function TicketsPage() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<'created' | 'updated'>('created');
   const [searchQuery, setSearchQuery] = useState('');
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
   const [statusChangeAction, setStatusChangeAction] = useState<{
@@ -35,48 +36,49 @@ export function TicketsPage() {
     status: TicketStatus;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const getDateRange = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    switch (dateFilter) {
-      case 'today':
-        return {
-          start: today,
-          end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-        };
-      case 'week':
-        {
-          const weekStart = new Date(today);
-          weekStart.setDate(today.getDate() - today.getDay());
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 7);
-          return {
-            start: weekStart,
-            end: weekEnd
-          };
-        }
-      case 'month':
-        {
-          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          return {
-            start: monthStart,
-            end: monthEnd
-          };
-        }
-      case 'custom':
-        if (customStartDate && customEndDate) {
-          return {
-            start: new Date(customStartDate),
-            end: new Date(new Date(customEndDate).getTime() + 24 * 60 * 60 * 1000)
-          };
-        }
-        return null;
-      default:
-        return null;
-    }
-  };
+  
   const filteredAndSortedTickets = useMemo(() => {
+    const getDateRange = () => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      switch (dateFilter) {
+        case 'today':
+          return {
+            start: today,
+            end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+          };
+        case 'week':
+          {
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 7);
+            return {
+              start: weekStart,
+              end: weekEnd
+            };
+          }
+        case 'month':
+          {
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            return {
+              start: monthStart,
+              end: monthEnd
+            };
+          }
+        case 'custom':
+          if (customStartDate && customEndDate) {
+            return {
+              start: new Date(customStartDate),
+              end: new Date(new Date(customEndDate).getTime() + 24 * 60 * 60 * 1000)
+            };
+          }
+          return null;
+        default:
+          return null;
+      }
+    };
     let filtered = tickets.filter(ticket => {
       // Status filter
       if (statusFilter !== 'all' && ticket.status !== statusFilter) return false;
@@ -105,13 +107,17 @@ export function TicketsPage() {
     }
 
     const sorted = [...filtered].sort((a, b) => {
-      const dateA = new Date(a.createdDate).getTime();
-      const dateB = new Date(b.createdDate).getTime();
-      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      const dateA = sortField === 'created' 
+        ? new Date(a.createdDate).getTime()
+        : new Date(a.resolvedDate || a.createdDate).getTime();
+      const dateB = sortField === 'created'
+        ? new Date(b.createdDate).getTime()
+        : new Date(b.resolvedDate || b.createdDate).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 
     return sorted;
-  }, [tickets, statusFilter, dateFilter, customStartDate, customEndDate, sortOrder, searchQuery]);
+  }, [tickets, statusFilter, dateFilter, customStartDate, customEndDate, sortOrder, sortField, searchQuery]);
 
   const statusLabel = (s: TicketStatus) => s === 'unresolved' ? 'Open' : s === 'resolving' ? 'In Progress' : 'Resolved';
 
@@ -224,7 +230,7 @@ export function TicketsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Select label="Date Range" options={[
               { value: 'all', label: 'All Time' },
               { value: 'today', label: 'Today' },
@@ -240,11 +246,25 @@ export function TicketsPage() {
               </>
             )}
 
-            <div className="flex items-end">
+            <Select 
+              label="Sort By" 
+              options={[
+                { value: 'created', label: 'Date Created' },
+                { value: 'updated', label: 'Date Updated' },
+              ]} 
+              value={sortField} 
+              onChange={(e) => setSortField(e.target.value as 'created' | 'updated')} 
+              className="mb-0" 
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sort Order
+              </label>
               <Button 
                 variant="outline" 
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} 
-                className="w-full" 
+                className="w-full h-10" 
                 leftIcon={<ArrowUpDown className="h-4 w-4" />}
               >
                 <span className="hidden sm:inline">
