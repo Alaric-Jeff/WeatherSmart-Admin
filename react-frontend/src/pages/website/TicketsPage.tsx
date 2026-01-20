@@ -16,6 +16,7 @@ const ISSUE_TYPES = ['Sensor', 'Software', 'Hardware'];
 export function TicketsPage({ user }: TicketsPageProps) {
   const [issueType, setIssueType] = useState<string>(ISSUE_TYPES[0]);
   const [description, setDescription] = useState('');
+  const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -42,10 +43,12 @@ export function TicketsPage({ user }: TicketsPageProps) {
       await createTicket({
         userId,
         description,
-        issueType
+        issueType,
+        notes
       });
       setStatus('success');
       setDescription('');
+      setNotes('');
       setIssueType(ISSUE_TYPES[0]);
       setTimeout(() => setStatus('idle'), 2500);
     } catch (err) {
@@ -118,10 +121,7 @@ export function TicketsPage({ user }: TicketsPageProps) {
               <div className="mb-6 flex flex-col gap-2 p-4 rounded-xl border border-gray-100 bg-gray-50">
                 <p className="text-sm text-gray-600">Submitting as</p>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">{accountLabel}</p>
-                    <p className="text-sm text-gray-500">User ID: {userId || 'Not available'}</p>
-                  </div>
+                  <p className="font-semibold text-gray-900">{accountLabel}</p>
                   <ShieldCheck className="w-5 h-5 text-blue-500" />
                 </div>
               </div>
@@ -163,6 +163,19 @@ export function TicketsPage({ user }: TicketsPageProps) {
                     rows={5}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
                     placeholder="Share what you are seeing, any error codes, and when it started."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">
+                    Additional notes <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                    placeholder="Any additional information that might help us resolve this faster."
                   />
                 </div>
 
