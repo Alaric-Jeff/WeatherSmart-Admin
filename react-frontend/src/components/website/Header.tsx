@@ -4,10 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface HeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  onLogout?: () => void;
+  user?: {
+    displayName?: string;
+  } | null;
 }
 export function Header({
   currentPage,
-  onNavigate
+  onNavigate,
+  onLogout,
+  user
 }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,9 +43,18 @@ export function Header({
     id: 'contact',
     label: 'Contact'
   }, {
-    id: 'login',
-    label: 'Login'
+    id: 'account',
+    label: 'Account'
   }];
+
+  const handleNavClick = (id: string) => {
+    if (id === 'logout') {
+      onLogout?.();
+    } else {
+      onNavigate(id);
+    }
+  };
+
   return <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
@@ -55,9 +70,13 @@ export function Header({
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            {navItems.map(item => <button key={item.id} onClick={() => onNavigate(item.id)} className={`text-sm font-medium transition-colors hover:text-blue-600 ${currentPage === item.id ? 'text-blue-600' : 'text-gray-600'}`}>
+            {navItems.map(item => <button key={item.id} onClick={() => handleNavClick(item.id)} className={`text-sm font-medium transition-colors hover:text-blue-600 ${currentPage === item.id ? 'text-blue-600' : 'text-gray-600'}`}>
                 {item.label}
               </button>)}
+            {user?.displayName && <span className="text-sm font-semibold text-gray-700">{user.displayName}</span>}
+            {onLogout && <button onClick={onLogout} className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors">
+                Logout
+              </button>}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -81,11 +100,18 @@ export function Header({
       }} className="md:hidden bg-white border-t border-gray-100 overflow-hidden">
             <div className="px-4 py-6 space-y-4">
               {navItems.map(item => <button key={item.id} onClick={() => {
-            onNavigate(item.id);
+            handleNavClick(item.id);
             setIsMobileMenuOpen(false);
           }} className={`block w-full text-left text-lg font-medium ${currentPage === item.id ? 'text-blue-600' : 'text-gray-600'}`}>
                   {item.label}
                 </button>)}
+              {user?.displayName && <div className="text-gray-700 font-semibold">{user.displayName}</div>}
+              {onLogout && <button onClick={() => {
+            onLogout();
+            setIsMobileMenuOpen(false);
+          }} className="block w-full text-left text-lg font-medium text-red-600">
+                  Logout
+                </button>}
             </div>
           </motion.div>}
       </AnimatePresence>

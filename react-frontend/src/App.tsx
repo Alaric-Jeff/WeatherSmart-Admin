@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/website/Header';
 import { Footer } from './components/website/Footer';
 import { HomePage } from './pages/website/HomePage';
@@ -8,8 +8,54 @@ import { ManualsPage } from './pages/website/ManualsPage';
 import { InquiriesPage } from './pages/website/InquiriesPage';
 import { ContactPage } from './pages/website/ContactPage';
 import { LoginPage } from './pages/website/LoginPage';
+import { AccountSettingsPage } from './pages/website/AccountSettingsPage';
+interface StoredUser {
+  uid?: string;
+  email?: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentPage, setCurrentPage] = useState('login');
+  const [user, setUser] = useState<StoredUser | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
+    if (token) {
+      setIsAuthenticated(true);
+      setCurrentPage('home');
+    }
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Failed to parse stored user', err);
+      }
+    }
+  }, []);
+
+  const handleLogin = (token: string, userInfo?: StoredUser) => {
+    setIsAuthenticated(true);
+    setCurrentPage('home');
+    if (userInfo) {
+      setUser(userInfo);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('remember_user');
+    localStorage.removeItem('auth_user');
+    setIsAuthenticated(false);
+    setCurrentPage('login');
+    setUser(null);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
@@ -24,8 +70,10 @@ export function App() {
         return <InquiriesPage />;
       case 'contact':
         return <ContactPage />;
+      case 'account':
+        return <AccountSettingsPage onNavigate={setCurrentPage} user={user} />;
       case 'login':
-        return <LoginPage />;
+        return <LoginPage onLoggedIn={handleLogin} />;
       default:
         return <HomePage onNavigate={setCurrentPage} />;
     }
@@ -38,9 +86,14 @@ export function App() {
       behavior: 'smooth'
     });
   };
+  // Show only login page if not authenticated
+  if (!isAuthenticated && currentPage !== 'login') {
+    setCurrentPage('login');
+  }
+
   return <div className="min-h-screen bg-white font-sans text-gray-900">
-      <Header currentPage={currentPage} onNavigate={handleNavigate} />
+      {isAuthenticated && <Header currentPage={currentPage} onNavigate={handleNavigate} onLogout={handleLogout} user={user} />}
       <main>{renderPage()}</main>
-      <Footer onNavigate={handleNavigate} />
+      {isAuthenticated && <Footer onNavigate={handleNavigate} />}
     </div>;
 }

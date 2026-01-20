@@ -3,7 +3,7 @@ import { LogIn, Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Droplets } fr
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoginPageProps {
-  onLoggedIn?: (token: string) => void;
+  onLoggedIn?: (token: string, user?: any) => void;
 }
 
 export function LoginPage({ onLoggedIn }: LoginPageProps) {
@@ -13,7 +13,7 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
+  const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +34,15 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
       
       const data = await res.json();
       localStorage.setItem('auth_token', data.token);
+      if (data.user) {
+        localStorage.setItem('auth_user', JSON.stringify(data.user));
+      }
       if (rememberMe) {
         localStorage.setItem('remember_user', email);
       }
       setStatus('success');
       setTimeout(() => {
-        onLoggedIn?.(data.token);
+        onLoggedIn?.(data.token, data.user);
       }, 1000);
     } catch (err) {
       setStatus('error');

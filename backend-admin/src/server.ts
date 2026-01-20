@@ -5,6 +5,7 @@ import emailPlugin from './plugin/nodemailer-plug.js'
 import cors from '@fastify/cors'
 import { adminRoutes } from "./shared/router/index.js";
 import { userModRoutes } from "./modules/user/router/index.js";
+import { userAuthRoutes } from "./modules/user/router/auth-routes.js";
 import { deviceModRouter } from "./modules/device/router/index.js";
 import { auditModRouter } from "./modules/audit-logs/router/index.js";
 import { dashboardModRoute } from "./shared/dashboard/router/index.js";
@@ -33,6 +34,7 @@ await server.register(emailPlugin, {
 });
 server.register(ticketsRouter, {prefix: "/tickets"})
 server.register(userModRoutes, {prefix: "/users"});
+server.register(userAuthRoutes, {prefix: "/api/auth"});
 server.register(deviceModRouter, {prefix: "/devices"});
 server.register(auditModRouter, {prefix: "/audit-logs"});
 server.register(adminRoutes, {prefix: "/admin"});
@@ -41,8 +43,14 @@ const PORT = Number(process.env.HTTP_PORT);
 const HOST = process.env.HOST as string;
 
 await server.register(cors, {
-  origin: 'http://localhost:5173', 
-  methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'], 
+  // Reflect the request origin for any localhost port during development
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (/^http:\/\/localhost:\d+$/.test(origin)) return cb(null, true);
+    return cb(new Error('Not allowed by CORS'), false);
+  },
+  methods: ['GET', 'POST', 'UPDATE', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 })
 
 
