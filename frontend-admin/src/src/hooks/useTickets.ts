@@ -1,68 +1,120 @@
 import { useState, useEffect } from 'react';
 import { Ticket, TicketStatus } from '../lib/types';
-const MOCK_TICKETS: Ticket[] = [{
-  ticketId: 't1',
-  userId: 'u1',
-  userName: 'John Doe',
-  userEmail: 'john@example.com',
-  issueType: 'sensor',
-  description: 'Temperature sensor reading inconsistent values in Rack 4.',
-  status: 'unresolved',
-  createdDate: '2023-06-20T09:30:00Z',
-  resolvedDate: null,
-  notes: ''
-}, {
-  ticketId: 't2',
-  userId: 'u2',
-  userName: 'Jane Smith',
-  userEmail: 'jane@example.com',
-  issueType: 'connectivity',
-  description: 'Cannot connect to device from mobile app since update.',
-  status: 'resolving',
-  createdDate: '2023-06-19T14:15:00Z',
-  resolvedDate: null,
-  notes: 'Investigating API logs.'
-}, {
-  ticketId: 't3',
-  userId: 'u3',
-  userName: 'Robert Johnson',
-  userEmail: 'robert@example.com',
-  issueType: 'hardware',
-  description: 'Power unit making strange noise.',
-  status: 'resolved',
-  createdDate: '2023-06-15T11:00:00Z',
-  resolvedDate: '2023-06-16T10:00:00Z',
-  notes: 'Replaced fan unit.'
-}];
+import { getTickets } from '../../api/tickets/get-tickets';
+import { updateTicketStatus } from '../../api/tickets/update-ticket-status';
+import { deleteTickets } from '../../api/tickets/delete-tickets';
+
 export function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchTickets = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setTickets(MOCK_TICKETS);
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getTickets();
+        
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.error('Invalid tickets data format:', data);
+          setTickets([]);
+          return;
+        }
+
+        // Filter out invalid tickets and map Firebase data to Ticket interface
+        const mappedTickets: Ticket[] = data
+          .filter((ticket: any) => ticket && ticket.id)
+          .map((ticket: any) => {
+            // Map Firebase status to our TicketStatus type
+            let status: TicketStatus = 'unresolved';
+            if (ticket.status === 'Open') status = 'unresolved';
+            else if (ticket.status === 'In-Progress') status = 'resolving';
+            else if (ticket.status === 'Resolved') status = 'resolved';
+
+            // Ensure ticket ID is a string
+            const ticketId = String(ticket.id || ticket.ticketId || '');
+            if (!ticketId) {
+              console.warn('Ticket without ID:', ticket);
+              return null;
+            }
+
+            return {
+              ticketId,
+              userId: ticket.userId || '',
+              userName: ticket.userName || 'Unknown User',
+              userEmail: ticket.email || '',
+              issueType: (ticket.issueType || 'other').toLowerCase() as any,
+              description: ticket.description || '',
+              status,
+              createdDate: ticket.createdAt instanceof Date 
+                ? ticket.createdAt.toISOString() 
+                : (String(ticket.createdAt) || new Date().toISOString()),
+              resolvedDate: ticket.updatedAt instanceof Date 
+                ? ticket.updatedAt.toISOString() 
+                : (ticket.updatedAt ? String(ticket.updatedAt) : null),
+              notes: ticket.notes || ''
+            };
+          })
+          .filter((ticket: Ticket | null): ticket is Ticket => ticket !== null);
+
+        setTickets(mappedTickets);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to fetch tickets';
+        console.error('Failed to fetch tickets:', err);
+        setError(errorMsg);
+        setTickets([]);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchTickets();
   }, []);
+
   const updateStatus = async (ticketId: string, status: TicketStatus) => {
-    setTickets(prev => prev.map(t => {
-      if (t.ticketId === ticketId) {
-        return {
-          ...t,
-          status,
-          resolvedDate: status === 'resolved' ? new Date().toISOString() : null
-        };
-      }
-      return t;
-    }));
+    try {
+      // Map our status to Firebase status
+      const firebaseStatus = status === 'unresolved' 
+        ? 'Open' 
+        : status === 'resolving' 
+        ? 'In-Progress' 
+        : 'Resolved';
+
+      await updateTicketStatus(ticketId, firebaseStatus);
+
+      // Update local state
+      setTickets(prev => prev.map(t => {
+        if (t.ticketId === ticketId) {
+          return {
+            ...t,
+            status,
+            resolvedDate: status === 'resolved' ? new Date().toISOString() : t.resolvedDate
+          };
+        }
+        return t;
+      }));
+    } catch (err) {
+      console.error('Failed to update ticket status:', err);
+      throw err;
+    }
   };
+
   const deleteTicket = async (ticketId: string) => {
-    setTickets(prev => prev.filter(t => t.ticketId !== ticketId));
+    try {
+      await deleteTickets(ticketId);
+      setTickets(prev => prev.filter(t => t.ticketId !== ticketId));
+    } catch (err) {
+      console.error('Failed to delete ticket:', err);
+      throw err;
+    }
   };
+
   return {
     tickets,
     loading,
+    error,
     updateStatus,
     deleteTicket
   };
