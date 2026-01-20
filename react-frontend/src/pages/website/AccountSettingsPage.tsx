@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, User, Mail, Phone, MapPin, Image } from 'lucide-react';
+import { Save, User, Mail, Phone, MapPin } from 'lucide-react';
 import { getUserInfo } from '../../api/users/get-user-info';
 import { updateUser } from '../../api/users/update-user';
 
@@ -17,7 +17,6 @@ interface FormState {
   lastName: string;
   contactNumber: string;
   address: string;
-  photoUrl: string;
   email: string;
 }
 
@@ -29,7 +28,6 @@ export function AccountSettingsPage({ user, onNavigate }: AccountSettingsPagePro
     lastName: '',
     contactNumber: '',
     address: '',
-    photoUrl: '',
     email: user?.email || ''
   });
   const [loading, setLoading] = useState(true);
@@ -54,7 +52,6 @@ export function AccountSettingsPage({ user, onNavigate }: AccountSettingsPagePro
           lastName: data.lastName || '',
           contactNumber: data.contactNumber || '',
           address: data.address || '',
-          photoUrl: data.photoUrl || '',
           email: data.email || ''
         });
       } catch (err) {
@@ -122,11 +119,8 @@ export function AccountSettingsPage({ user, onNavigate }: AccountSettingsPagePro
               <input value={form.displayName} onChange={(e) => handleChange('displayName', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none" placeholder="How your name appears" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Photo URL</label>
-              <div className="relative">
-                <Image className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input value={form.photoUrl} onChange={(e) => handleChange('photoUrl', e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none" placeholder="https://..." />
-              </div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+              <input value={form.firstName} onChange={(e) => handleChange('firstName', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none" />
             </div>
           </div>
 
