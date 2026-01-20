@@ -8,6 +8,7 @@ import { userModRoutes } from "./modules/user/router/index.js";
 import { deviceModRouter } from "./modules/device/router/index.js";
 import { auditModRouter } from "./modules/audit-logs/router/index.js";
 import { dashboardModRoute } from "./shared/dashboard/router/index.js";
+import { ticketsRouter } from "./modules/tickets/router/index.js";
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 
 
@@ -30,6 +31,7 @@ await server.register(emailPlugin, {
   user: "jefsohandsome1@gmail.com",      
   pass: "oxkubdkarbnnjkfz",            
 });
+server.register(ticketsRouter, {prefix: "/tickets"})
 server.register(userModRoutes, {prefix: "/users"});
 server.register(deviceModRouter, {prefix: "/devices"});
 server.register(auditModRouter, {prefix: "/audit-logs"});
