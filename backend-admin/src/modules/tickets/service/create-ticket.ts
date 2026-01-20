@@ -8,7 +8,6 @@ export async function createTicket(
     userId: string;
     description: string;
     issueType: string;
-    notes: string;
   }
 ) {
   try {
@@ -30,7 +29,6 @@ export async function createTicket(
       email: userData.email,
       description: body.description,
       issueType: body.issueType,
-      notes: body.notes,
       status: "Open",
       createdAt: new Date(),
       updatedAt: new Date()
