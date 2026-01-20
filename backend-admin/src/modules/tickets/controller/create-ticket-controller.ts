@@ -9,7 +9,6 @@ export async function createTicketController(
     const {
         description,
         issueType,
-        notes,
         userId
     } = req.body;
     try{
@@ -20,7 +19,6 @@ export async function createTicketController(
             userId,
             description,
             issueType,
-            notes
         })
 
         return reply.code(201).send({

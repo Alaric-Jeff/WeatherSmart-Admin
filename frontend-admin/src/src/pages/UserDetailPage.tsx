@@ -5,15 +5,16 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { UserStatusBadge } from '../components/users/UserStatusBadge';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { useUsers } from '../hooks/useUsers';
 import { ArrowLeft, Mail, Shield, Smartphone, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserInfo } from '../../api/users/get-user-info';
+import { disableAccount } from '../../api/users/disable-account';
+import { activateAccount } from '../../api/users/activate-account';
+import { sendPasswordReset } from '../../api/users/send-password-reset';
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toggleUserStatus, resetPassword } = useUsers();
 
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,7 @@ export function UserDetailPage() {
     payload?: any;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reason, setReason] = useState('');
 
   // Fetch specific user on mount
   useEffect(() => {
@@ -66,14 +68,26 @@ export function UserDetailPage() {
 
   const handleConfirm = async () => {
     if (!confirmAction) return;
+    
+    // Validate reason input
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for this action');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       if (confirmAction.type === 'toggleStatus') {
-        await toggleUserStatus(user.uuid);
-        toast.success(`User account ${user.status === 'activated' ? 'disabled' : 'activated'} successfully`);
+        if (user.status === 'activated') {
+          await disableAccount(user.uuid, reason);
+          toast.success('User account disabled successfully');
+        } else {
+          await activateAccount(user.uuid, reason);
+          toast.success('User account activated successfully');
+        }
       } else if (confirmAction.type === 'resetPassword') {
-        await resetPassword(user.uuid);
-        toast.success('Password reset email sent');
+        await sendPasswordReset(user.uuid, reason);
+        toast.success('Password reset email sent successfully');
       } else if (confirmAction.type === 'unassignDevice') {
         // TODO: Call your unassign device API here
         // await unassignDeviceAPI(confirmAction.payload.deviceId, user.uuid);
@@ -85,11 +99,18 @@ export function UserDetailPage() {
       setUser(refreshedUser);
 
       setConfirmAction(null);
+      setReason('');
     } catch (err) {
-      toast.error('Action failed');
+      console.error('Action failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Action failed');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCancelDialog = () => {
+    setConfirmAction(null);
+    setReason('');
   };
 
   return (
@@ -209,30 +230,65 @@ export function UserDetailPage() {
         </div>
       </div>
 
-      <ConfirmDialog
-        isOpen={!!confirmAction}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleConfirm}
-        title={
-          confirmAction?.type === 'toggleStatus'
-            ? user.status === 'activated'
-              ? 'Disable Account'
-              : 'Activate Account'
-            : confirmAction?.type === 'resetPassword'
-            ? 'Reset Password'
-            : 'Unassign Device'
-        }
-        message={
-          confirmAction?.type === 'toggleStatus'
-            ? `Are you sure you want to ${user.status === 'activated' ? 'disable' : 'activate'} this user account?`
-            : confirmAction?.type === 'resetPassword'
-            ? 'Are you sure you want to send a password reset email to this user?'
-            : 'Are you sure you want to unassign this device from this user?'
-        }
-        confirmText="Confirm"
-        variant={confirmAction?.type === 'toggleStatus' && user.status === 'activated' ? 'danger' : 'primary'}
-        isLoading={isProcessing}
-      />
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {confirmAction.type === 'toggleStatus'
+                ? user.status === 'activated'
+                  ? 'Disable Account'
+                  : 'Activate Account'
+                : confirmAction.type === 'resetPassword'
+                ? 'Reset Password'
+                : 'Unassign Device'}
+            </h3>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                {confirmAction.type === 'toggleStatus'
+                  ? `Are you sure you want to ${user.status === 'activated' ? 'disable' : 'activate'} this user account?`
+                  : confirmAction.type === 'resetPassword'
+                  ? 'Are you sure you want to send a password reset email to this user?'
+                  : 'Are you sure you want to unassign this device from this user?'}
+              </p>
+              
+              <div>
+                <label htmlFor="reason-input" className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="reason-input"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Enter reason for this action..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={handleCancelDialog}
+                className="flex-1"
+                disabled={isProcessing}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={confirmAction.type === 'toggleStatus' && user.status === 'activated' ? 'danger' : 'primary'}
+                onClick={handleConfirm}
+                className="flex-1"
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processing...' : 'Confirm'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
