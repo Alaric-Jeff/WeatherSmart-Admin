@@ -238,7 +238,7 @@ export function DevicesPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created Date
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -296,8 +296,8 @@ export function DevicesPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(device.createdDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium sticky right-0 bg-white">
+                      <div className="flex justify-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"

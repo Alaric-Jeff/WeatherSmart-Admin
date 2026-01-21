@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Admin } from '../lib/types';
 import { frontendSignIn } from '../../api/shared/get-signin-cred';
 import { adminSignIn } from '../../api/shared/admin-sign-in';
+import { updateAdminProfile as apiUpdateProfile, UpdateProfilePayload } from '../../api/shared/update-admin-profile';
+import { changeAdminPassword } from '../../api/shared/change-password';
 
 export function useAuth() {
   const [user, setUser] = useState<Admin | null>(null);
@@ -107,9 +109,35 @@ export function useAuth() {
 
   const updateProfile = async (data: Partial<Admin>) => {
     if (!user) return;
-    const updatedUser = { ...user, ...data };
+    
+    // Call the API to update the profile
+    const profilePayload: UpdateProfilePayload = {};
+    if (data.firstName !== undefined) profilePayload.firstName = data.firstName;
+    if (data.lastName !== undefined) profilePayload.lastName = data.lastName;
+    if (data.middleName !== undefined) profilePayload.middleName = data.middleName;
+    if (data.phoneNumber !== undefined) profilePayload.phoneNumber = data.phoneNumber;
+    if (data.address !== undefined) profilePayload.address = data.address;
+
+    const updatedData = await apiUpdateProfile(profilePayload);
+    
+    const updatedUser = { 
+      ...user, 
+      ...updatedData,
+      // Keep fields that come from local state if not returned from backend
+      firstName: updatedData.firstName ?? data.firstName ?? user.firstName,
+      lastName: updatedData.lastName ?? data.lastName ?? user.lastName,
+      middleName: updatedData.middleName ?? data.middleName ?? user.middleName,
+    };
+    
     setUser(updatedUser);
     localStorage.setItem('ws_admin_user', JSON.stringify(updatedUser));
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await changeAdminPassword({
+      currentPassword,
+      newPassword,
+    });
   };
 
   // Helper function to get the current ID token
@@ -125,6 +153,7 @@ export function useAuth() {
     loginWithGoogle,
     logout,
     updateProfile,
+    changePassword,
     getIdToken, // Export this so other components can access the token
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super-admin',
