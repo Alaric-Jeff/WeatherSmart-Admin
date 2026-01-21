@@ -23,7 +23,7 @@ export async function userLoginService(
     }
 
     const userDoc = usersSnapshot.docs[0];
-    const userData = userDoc.data();
+    const userData = userDoc!.data() ?? {};
 
     // Check if user account is activated
     if (userData.status !== "activated") {
@@ -40,7 +40,7 @@ export async function userLoginService(
       return {
         token: customToken,
         user: {
-          uid: userDoc.id,
+          uid: userDoc!.id,
           email: userData.email,
           displayName: userData.displayName || `${userData.firstName} ${userData.lastName}`,
           firstName: userData.firstName,

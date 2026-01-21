@@ -3,7 +3,7 @@ import { getAuthHeaders } from "../shared/get-auth-headers";
 export async function getAuditLogsInfo(auditId: string) {
   try {
     const res = await fetch(
-      `http://localhost:3000/audit-logs/get-audit-logs-info/${auditId}`,
+      `http://localhost:3000/audit-logs/get-audit-info/${auditId}`,
       {
         method: "GET",
         headers: getAuthHeaders(),
