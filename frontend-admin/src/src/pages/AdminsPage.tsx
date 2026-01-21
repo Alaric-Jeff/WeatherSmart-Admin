@@ -228,11 +228,11 @@ export function AdminsPage() {
         })} required placeholder="admin@weathersmart.com" />
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Password" type="password" leftIcon={<Lock className="h-4 w-4 text-gray-400" />} value={newAdmin.password} onChange={e => setNewAdmin({
+              <Input label="Password" type="password" value={newAdmin.password} onChange={e => setNewAdmin({
             ...newAdmin,
             password: e.target.value
           })} required placeholder="Strong password" />
-              <Input label="Confirm Password" type="password" leftIcon={<Lock className="h-4 w-4 text-gray-400" />} value={newAdmin.confirmPassword} onChange={e => setNewAdmin({
+              <Input label="Confirm Password" type="password" value={newAdmin.confirmPassword} onChange={e => setNewAdmin({
             ...newAdmin,
             confirmPassword: e.target.value
           })} required placeholder="Re-enter password" />

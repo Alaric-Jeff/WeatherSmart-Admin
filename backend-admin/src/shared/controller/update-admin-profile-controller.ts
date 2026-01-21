@@ -3,11 +3,11 @@ import { ServiceError } from "../../error/service-error.js";
 import { updateAdminProfile } from "../service/update-admin-profile.js";
 
 interface UpdateProfileBody {
-  firstName?: string;
-  lastName?: string;
-  middleName?: string;
-  phoneNumber?: string;
-  address?: string;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  phoneNumber: string;
+  address: string;
 }
 
 export async function updateAdminProfileController(
@@ -21,13 +21,17 @@ export async function updateAdminProfileController(
       });
     }
 
-    const adminId = req.user.uid;
+
+
+    const adminId = req.user!.uid;
     const { firstName, lastName, middleName, phoneNumber, address } = req.body;
+
+    const normalizedMiddleName = middleName ?? "";
 
     const updatedAdmin = await updateAdminProfile(req.server, adminId, {
       firstName,
       lastName,
-      middleName,
+      middleName: normalizedMiddleName,
       phoneNumber,
       address
     });

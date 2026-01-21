@@ -30,7 +30,7 @@ await server.register(emailPlugin, {
   port: 465,
   secure: true,
   user: "jefsohandsome1@gmail.com",      
-  pass: "oxkubdkarbnnjkfz",            
+  pass: "atdxricoakiwnbcw",            
 });
 server.register(ticketsRouter, {prefix: "/tickets"})
 server.register(userModRoutes, {prefix: "/users"});

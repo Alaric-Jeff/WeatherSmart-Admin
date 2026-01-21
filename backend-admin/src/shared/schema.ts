@@ -1,11 +1,8 @@
 import { Type, type Static } from "@sinclair/typebox";
-
 export const signinReq = Type.Object({
     idToken: Type.String()
 });
-
 export type SigninReq = Static<typeof signinReq>;
-
 // export const signinReq = Type.Object({
 //   email: Type.String({
 //     pattern: "^[A-Za-z0-9._%+-]+@gmail\\.com$"
@@ -35,11 +32,7 @@ export const createAdminAccountSchema = Type.Object({
     })
   ),
   middleName: Type.Optional(
-    Type.String({
-      minLength: 2,
-      maxLength: 64,
-      pattern: "^[A-Za-z]+$"
-    })
+    Type.String()
   ),
   email: Type.String({
     format: "email"

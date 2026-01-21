@@ -49,6 +49,108 @@ export async function createAdminAccount(
       reason: "Super-admin manual creation without email verification",
     });
 
+    // Send welcome email with credentials
+    try {
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+            .credentials { background-color: white; padding: 15px; border-left: 4px solid #4F46E5; margin: 20px 0; }
+            .credential-item { margin: 10px 0; }
+            .credential-label { font-weight: bold; color: #4F46E5; }
+            .credential-value { font-family: monospace; background-color: #f3f4f6; padding: 5px 10px; border-radius: 3px; display: inline-block; }
+            .warning { background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Welcome to the Admin Portal</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${displayName},</p>
+              <p>Your admin account has been successfully created. Below are your login credentials:</p>
+              
+              <div class="credentials">
+                <div class="credential-item">
+                  <span class="credential-label">Email:</span><br/>
+                  <span class="credential-value">${body.email}</span>
+                </div>
+                <div class="credential-item">
+                  <span class="credential-label">Temporary Password:</span><br/>
+                  <span class="credential-value">${body.password}</span>
+                </div>
+              </div>
+
+              <div class="warning">
+                <strong>⚠️ Security Notice:</strong>
+                <ul>
+                  <li>Please change your password immediately after your first login</li>
+                  <li>Do not share your credentials with anyone</li>
+                  <li>This email contains sensitive information - please delete it after changing your password</li>
+                </ul>
+              </div>
+
+              <p>You can access the admin portal at: <strong>http://localhost:5173/login</strong></p>
+            
+              <p>If you have any questions or need assistance, please contact the system administrator.</p>
+              
+              <p>Best regards,<br/>The Admin Team</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const emailText = `
+Welcome to the Admin Portal
+
+Hello ${displayName},
+
+Your admin account has been successfully created. Below are your login credentials:
+
+Email: ${body.email}
+Temporary Password: ${body.password}
+
+SECURITY NOTICE:
+- Please change your password immediately after your first login
+- Do not share your credentials with anyone
+- This email contains sensitive information - please delete it after changing your password
+
+You can access the admin portal at: [Your Portal URL]
+
+If you have any questions or need assistance, please contact the system administrator.
+
+Best regards,
+The Admin Team
+
+---
+This is an automated message. Please do not reply to this email.
+      `;
+
+      await fastify.email.sendMail({
+        from: process.env.SMTP_USER || "noreply@yourdomain.com",
+        to: body.email,
+        subject: "Your Admin Account Credentials",
+        text: emailText,
+        html: emailHtml,
+      });
+
+      fastify.log.info(`Credentials email sent to ${body.email}`);
+    } catch (emailError) {
+      // Log email error but don't fail the account creation
+      fastify.log.error({ err: emailError }, "Failed to send credentials email");
+    }
+
     fastify.log.info(`Admin account created for ${body.email} with ID ${userRecord.uid}`);
 
     return {
