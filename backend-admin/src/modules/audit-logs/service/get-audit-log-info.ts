@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { ServiceError } from "../../../error/service-error.js";                         
+import { ServiceError } from "../../../error/service-error.js";
+
 export async function getAuditInfo(
     fastify: FastifyInstance, 
     body: {id: string}
@@ -18,7 +19,8 @@ export async function getAuditInfo(
             performedBy: auditData.performedBy,
             action: auditData.action,
             target: auditData.target,
-            createdAt: auditData.createdAt
+            reason: auditData.reason || 'No description provided',
+            timestamp: auditData.createdAt?.toDate().toISOString() || null
         }
 
     }catch(err: unknown){

@@ -18,14 +18,8 @@ export async function getAuditLogsInfo(auditId: string) {
     }
 
     const json = await res.json();
-    const auditData = json.data;
-    if (!auditData) return null; 
+    return json.data || null;
 
-    return {
-      ...auditData,
-      createdAt: auditData.createdAt ? new Date(auditData.createdAt) : null,
-      updatedAt: auditData.updatedAt ? new Date(auditData.updatedAt) : null,
-    };
   } catch (err: unknown) {
     console.error("An error occurred in fetching the audit log:", err);
     throw err;

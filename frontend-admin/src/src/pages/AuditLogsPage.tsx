@@ -16,13 +16,13 @@ interface AuditLog {
   id: string;
   performedBy: string;
   action: string;
-  target: string; // Backend returns string, not object
+  target: string;
   timestamp: string; // ISO string from backend
 }
 
 // Type for detailed audit info
 interface AuditLogDetail extends AuditLog {
-  // Add any additional fields that come from getAuditLogsInfo
+  reason?: string; // Description of the audit action
 }
 
 export function AuditLogsPage() {
@@ -130,17 +130,11 @@ export function AuditLogsPage() {
 
   const formatTimestamp = (timestamp: string) => {
     if (!timestamp) return 'N/A';
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const formatDetails = (log: AuditLogDetail) => {
-    return JSON.stringify({
-      id: log.id,
-      performedBy: log.performedBy,
-      action: log.action,
-      target: log.target,
-      timestamp: log.timestamp
-    }, null, 2);
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   return (
@@ -376,12 +370,12 @@ export function AuditLogsPage() {
 
             <div>
               <p className="text-sm font-medium text-gray-900 mb-2">
-                Detailed Changes
+                Description
               </p>
-              <div className="bg-gray-900 rounded-md p-4 overflow-x-auto">
-                <pre className="text-xs text-gray-100 font-mono whitespace-pre-wrap">
-                  {formatDetails(selectedLog)}
-                </pre>
+              <div className="bg-gray-50 rounded-md p-4 border border-gray-200">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedLog.reason || 'No description provided'}
+                </p>
               </div>
             </div>
 
