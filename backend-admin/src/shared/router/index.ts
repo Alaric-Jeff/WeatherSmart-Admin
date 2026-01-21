@@ -5,6 +5,8 @@ import { firebaseAuthPreHandler } from "../../plugin/firebase-plug.js";
 import { createAdminAccountController } from "../controller/create-admin-controller.js";
 import { verifyEmailAdminController } from "../controller/verifyAdminController.js";
 import { getAdminsController } from "../controller/get-admins-controller.js";
+import { updateAdminProfileController } from "../controller/update-admin-profile-controller.js";
+import { changePasswordController } from "../controller/change-password-controller.js";
 
 export function adminRoutes(fastify: FastifyInstance) {
   // Signin route
@@ -50,5 +52,43 @@ export function adminRoutes(fastify: FastifyInstance) {
       },
     },
     handler: verifyEmailAdminController,
+  });
+
+  // Update profile route
+  fastify.route({
+    url: "/update-profile",
+    method: "PUT",
+    schema: {
+      body: {
+        type: "object",
+        properties: {
+          firstName: { type: "string" },
+          lastName: { type: "string" },
+          middleName: { type: "string" },
+          phoneNumber: { type: "string" },
+          address: { type: "string" },
+        },
+      },
+    },
+    preHandler: firebaseAuthPreHandler,
+    handler: updateAdminProfileController,
+  });
+
+  // Change password route
+  fastify.route({
+    url: "/change-password",
+    method: "POST",
+    schema: {
+      body: {
+        type: "object",
+        required: ["currentPassword", "newPassword"],
+        properties: {
+          currentPassword: { type: "string" },
+          newPassword: { type: "string" },
+        },
+      },
+    },
+    preHandler: firebaseAuthPreHandler,
+    handler: changePasswordController,
   });
 }

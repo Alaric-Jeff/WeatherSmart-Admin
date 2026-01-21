@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createTicket } from '../../api/tickets/create-ticket';
-import { AlertCircle, CheckCircle, LifeBuoy, Send, ShieldCheck, Ticket, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, LifeBuoy, Send, ShieldCheck, Ticket, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TicketsPageProps {
@@ -20,6 +20,7 @@ export function TicketsPage({ user, onNavigate }: TicketsPageProps) {
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const userId = user?.uid ?? '';
 
@@ -29,14 +30,18 @@ export function TicketsPage({ user, onNavigate }: TicketsPageProps) {
     return 'Your account';
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
       setErrorMessage('We could not find your account. Please sign in again.');
       setStatus('error');
       return;
     }
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false);
     setStatus('submitting');
     setErrorMessage('');
 
@@ -56,6 +61,10 @@ export function TicketsPage({ user, onNavigate }: TicketsPageProps) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : 'Unable to send ticket right now.');
     }
+  };
+
+  const handleCancelSubmit = () => {
+    setShowConfirmModal(false);
   };
 
   const isSubmitting = status === 'submitting';
@@ -256,6 +265,98 @@ export function TicketsPage({ user, onNavigate }: TicketsPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={handleCancelSubmit}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Confirm your ticket</h3>
+                </div>
+                <button
+                  onClick={handleCancelSubmit}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p className="text-gray-600 mb-6">Please review your ticket details before submitting:</p>
+
+              <div className="space-y-4 mb-8 bg-gray-50 p-4 rounded-xl">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Issue Type</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{issueType}</p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</p>
+                  <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap break-words">{description}</p>
+                </div>
+
+                {notes && (
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Additional Notes</p>
+                    <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap break-words">{notes}</p>
+                  </div>
+                )}
+
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted As</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{accountLabel}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelSubmit}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-all"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleConfirmSubmit}
+                  disabled={status === 'submitting'}
+                  className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {status === 'submitting' ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                      />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      <span>Submit Ticket</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -3,13 +3,15 @@ import { AdminLayout } from '../components/layout/AdminLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Save } from 'lucide-react';
+import { Lock, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 export function AccountSettingsPage() {
   const {
     user,
-    updateProfile
+    updateProfile,
+    changePassword
   } = useAuth();
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
@@ -24,15 +26,62 @@ export function AccountSettingsPage() {
   });
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showPasswordConfirmDialog, setShowPasswordConfirmDialog] = useState(false);
+  const [pendingProfileUpdate, setPendingProfileUpdate] = useState<any>(null);
+  const [showPasswordFields, setShowPasswordFields] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // If user starts with single 9 (not 09), prepend 0
+    if (value.startsWith('9') && !value.startsWith('09')) {
+      value = '0' + value;
+    }
+    // If it's just 0, allow it
+    // Otherwise, only numbers starting with 09 are allowed
+    
+    // Limit to 11 digits (Philippine number: 09 + 9 digits)
+    if (value.length > 11) {
+      value = value.slice(0, 11);
+    }
+
+    setProfileData({
+      ...profileData,
+      phoneNumber: value
+    });
+  };
+
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Build update payload
+    const updatePayload: any = {};
+    if (profileData.firstName.trim()) updatePayload.firstName = profileData.firstName;
+    if (profileData.lastName.trim()) updatePayload.lastName = profileData.lastName;
+    if (profileData.phoneNumber.trim()) updatePayload.phoneNumber = profileData.phoneNumber;
+    if (profileData.address.trim()) updatePayload.address = profileData.address;
+    
+    // Store pending update and show confirmation dialog
+    setPendingProfileUpdate(updatePayload);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmProfileUpdate = async () => {
+    if (!pendingProfileUpdate) return;
+    
+    setShowConfirmDialog(false);
     setIsProfileSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await updateProfile(profileData);
+      await updateProfile(pendingProfileUpdate);
       toast.success('Profile updated successfully');
-    } catch (error) {
-      toast.error('Failed to update profile');
+      setPendingProfileUpdate(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsProfileSaving(false);
     }
@@ -47,17 +96,24 @@ export function AccountSettingsPage() {
       toast.error('Password must be at least 8 characters');
       return;
     }
+    
+    // Show confirmation dialog
+    setShowPasswordConfirmDialog(true);
+  };
+
+  const handleConfirmPasswordUpdate = async () => {
+    setShowPasswordConfirmDialog(false);
     setIsPasswordSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await changePassword(passwords.current, passwords.new);
       toast.success('Password changed successfully');
       setPasswords({
         current: '',
         new: '',
         confirm: ''
       });
-    } catch (error) {
-      toast.error('Failed to change password');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to change password');
     } finally {
       setIsPasswordSaving(false);
     }
@@ -92,10 +148,7 @@ export function AccountSettingsPage() {
             <p className="text-xs text-gray-500 -mt-2">
               Email cannot be changed for security reasons
             </p>
-            <Input label="Phone Number" value={profileData.phoneNumber} onChange={e => setProfileData({
-            ...profileData,
-            phoneNumber: e.target.value
-          })} placeholder="+1 (555) 123-4567" />
+            <Input label="Phone Numbers" value={profileData.phoneNumber} onChange={handlePhoneNumberChange} placeholder="09XX XXX XXXX" />
             <Input label="Address" value={profileData.address} onChange={e => setProfileData({
             ...profileData,
             address: e.target.value
@@ -121,18 +174,77 @@ export function AccountSettingsPage() {
               </ul>
             </div>
 
-            <Input label="Current Password" type="password" value={passwords.current} onChange={e => setPasswords({
-            ...passwords,
-            current: e.target.value
-          })} required placeholder="Enter current password" />
-            <Input label="New Password" type="password" value={passwords.new} onChange={e => setPasswords({
-            ...passwords,
-            new: e.target.value
-          })} required placeholder="Enter new password" />
-            <Input label="Confirm New Password" type="password" value={passwords.confirm} onChange={e => setPasswords({
-            ...passwords,
-            confirm: e.target.value
-          })} required placeholder="Confirm new password" />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Current Password</label>
+              <div className="relative">
+                <input
+                  type={showPasswordFields.current ? 'text' : 'password'}
+                  value={passwords.current}
+                  onChange={e => setPasswords({ ...passwords, current: e.target.value })}
+                  required
+                  placeholder="Enter current password"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPasswordFields({ ...showPasswordFields, current: !showPasswordFields.current });
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswordFields.current ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">New Password</label>
+              <div className="relative">
+                <input
+                  type={showPasswordFields.new ? 'text' : 'password'}
+                  value={passwords.new}
+                  onChange={e => setPasswords({ ...passwords, new: e.target.value })}
+                  required
+                  placeholder="Enter new password"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPasswordFields({ ...showPasswordFields, new: !showPasswordFields.new });
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswordFields.new ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
+              <div className="relative">
+                <input
+                  type={showPasswordFields.confirm ? 'text' : 'password'}
+                  value={passwords.confirm}
+                  onChange={e => setPasswords({ ...passwords, confirm: e.target.value })}
+                  required
+                  placeholder="Confirm new password"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPasswordFields({ ...showPasswordFields, confirm: !showPasswordFields.confirm });
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswordFields.confirm ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
             <div className="flex justify-end pt-4">
               <Button type="submit" isLoading={isPasswordSaving} leftIcon={<Lock className="h-4 w-4" />}>
                 Update Password
@@ -141,5 +253,36 @@ export function AccountSettingsPage() {
           </form>
         </Card>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => {
+          setShowConfirmDialog(false);
+          setPendingProfileUpdate(null);
+        }}
+        onConfirm={handleConfirmProfileUpdate}
+        title="Confirm Profile Changes"
+        message={`Are you sure you want to update the following information?\n\n${
+          Object.entries(pendingProfileUpdate || {})
+            .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+            .join('\n')
+        }`}
+        confirmText="Confirm Changes"
+        cancelText="Cancel"
+        variant="primary"
+        isLoading={isProfileSaving}
+      />
+
+      <ConfirmDialog
+        isOpen={showPasswordConfirmDialog}
+        onClose={() => setShowPasswordConfirmDialog(false)}
+        onConfirm={handleConfirmPasswordUpdate}
+        title="Confirm Password Change"
+        message="Are you sure you want to change your password? You will need to use your new password to log in next time."
+        confirmText="Change Password"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={isPasswordSaving}
+      />
     </AdminLayout>;
 }
