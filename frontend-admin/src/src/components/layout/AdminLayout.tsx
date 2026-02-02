@@ -15,7 +15,7 @@ export function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { logout } = useAuth();
-  return <div className="min-h-screen bg-gray-50 flex">
+  return <div className="min-h-screen bg-blue-50 flex">
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} />}
 

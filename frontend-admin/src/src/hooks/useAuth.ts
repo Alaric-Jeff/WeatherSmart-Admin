@@ -131,6 +131,9 @@ export function useAuth() {
     
     setUser(updatedUser);
     localStorage.setItem('ws_admin_user', JSON.stringify(updatedUser));
+    
+    // Notify other components to refresh state
+    window.dispatchEvent(new Event('ws-auth-changed'));
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {

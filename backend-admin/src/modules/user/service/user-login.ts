@@ -30,12 +30,40 @@ export async function userLoginService(
       throw new ServiceError(403, "Account is not activated");
     }
 
-    // Get Firebase user record
+    const apiKey = process.env.FIREBASE_API_KEY || process.env.FIREBASE_WEB_API_KEY;
+    if (!apiKey) {
+      throw new ServiceError(500, "Auth configuration error");
+    }
+
     try {
-      const userRecord = await fastify.firebaseAdmin.auth().getUserByEmail(body.email);
-      
+      // Verify password using Firebase Identity Toolkit
+      const signInResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: body.email,
+            password: body.password,
+            returnSecureToken: true
+          })
+        }
+      );
+
+      if (!signInResponse.ok) {
+        const errorData = await signInResponse.json().catch(() => ({}));
+        fastify.log.error({ error: errorData }, "Firebase auth failed");
+        throw new ServiceError(401, "Invalid email or password");
+      }
+
+      const signInData = await signInResponse.json();
+      const uid = signInData?.localId;
+      if (!uid) {
+        throw new ServiceError(401, "Invalid email or password");
+      }
+
       // Create a custom token for the user
-      const customToken = await fastify.firebaseAdmin.auth().createCustomToken(userRecord.uid);
+      const customToken = await fastify.firebaseAdmin.auth().createCustomToken(uid);
       
       return {
         token: customToken,

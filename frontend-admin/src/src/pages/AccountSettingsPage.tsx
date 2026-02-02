@@ -56,6 +56,28 @@ export function AccountSettingsPage() {
     });
   };
 
+  // Helper function to capitalize first letter of each word
+  const capitalizeWords = (str: string): string => {
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Helper function to sanitize name (only letters and spaces)
+  const sanitizeName = (str: string): string => {
+    return str.replace(/[^a-zA-Z\s]/g, '');
+  };
+
+  const handleNameChange = (field: 'firstName' | 'lastName', value: string) => {
+    const sanitized = sanitizeName(value);
+    const capitalized = capitalizeWords(sanitized);
+    setProfileData({
+      ...profileData,
+      [field]: capitalized
+    });
+  };
+
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -135,14 +157,16 @@ export function AccountSettingsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First Name" value={profileData.firstName} onChange={e => setProfileData({
-              ...profileData,
-              firstName: e.target.value
-            })} />
-              <Input label="Last Name" value={profileData.lastName} onChange={e => setProfileData({
-              ...profileData,
-              lastName: e.target.value
-            })} />
+              <Input 
+                label="First Name" 
+                value={profileData.firstName} 
+                onChange={e => handleNameChange('firstName', e.target.value)} 
+              />
+              <Input 
+                label="Last Name" 
+                value={profileData.lastName} 
+                onChange={e => handleNameChange('lastName', e.target.value)} 
+              />
             </div>
             <Input label="Email" value={user?.email} disabled className="bg-gray-50" />
             <p className="text-xs text-gray-500 -mt-2">

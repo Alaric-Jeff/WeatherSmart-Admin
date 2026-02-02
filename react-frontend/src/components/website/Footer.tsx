@@ -1,5 +1,5 @@
 import React from 'react';
-import { Droplets, Github, Linkedin, Mail, MapPin } from 'lucide-react';
+import { Github, Linkedin, Mail, MapPin } from 'lucide-react';
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
@@ -12,8 +12,8 @@ export function Footer({
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-blue-600 rounded-lg">
-                <Droplets className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
+                <img src="/Iconi.png" alt="Smart Laundry Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-lg font-bold text-gray-900">
                 Smart Laundry

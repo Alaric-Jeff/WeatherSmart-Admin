@@ -11,6 +11,19 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useAdmins } from '../hooks/useAdmins';
 import { type CreateAdminPayload } from '../../api/shared/create-admin';
+
+// Utility function to capitalize first letter
+const capitalizeFirstLetter = (str: string): string => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+// Utility function to allow only alphabetic characters and spaces
+const sanitizeName = (str: string): string => {
+  // Only allow letters (a-z, A-Z) and spaces
+  return str.replace(/[^a-zA-Z\s]/g, '');
+};
+
 export function AdminsPage() {
   const {
     admins,
@@ -29,6 +42,7 @@ export function AdminsPage() {
     confirmPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const filteredAdmins = admins.filter(admin => {
     const name = `${admin.firstName ?? ''} ${admin.lastName ?? ''}`.toLowerCase();
     const email = admin.email?.toLowerCase() ?? '';
@@ -38,6 +52,16 @@ export function AdminsPage() {
   });
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError('');
+
+    // Email validation - gmail.com only
+    const gmailRegex = /^[a-z0-9]+@gmail\.com$/;
+    if (!gmailRegex.test(newAdmin.email)) {
+      setEmailError('Email must be a valid Gmail address (lowercase, e.g., user@gmail.com)');
+      toast.error('Email must be a valid Gmail address');
+      return;
+    }
+
     if (newAdmin.password !== newAdmin.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -77,6 +101,7 @@ export function AdminsPage() {
   const handleCloseModal = () => {
     setIsCreateModalOpen(false);
     setStep(1);
+    setEmailError('');
     setNewAdmin({
       firstName: '',
       lastName: '',
@@ -208,34 +233,68 @@ export function AdminsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First Name" value={newAdmin.firstName} onChange={e => setNewAdmin({
-            ...newAdmin,
-            firstName: e.target.value
-          })} placeholder="John" />
-              <Input label="Last Name" value={newAdmin.lastName} onChange={e => setNewAdmin({
-            ...newAdmin,
-            lastName: e.target.value
-          })} placeholder="Doe" />
+              <Input 
+                label="First Name" 
+                value={newAdmin.firstName} 
+                onChange={e => setNewAdmin({
+                  ...newAdmin,
+                  firstName: capitalizeFirstLetter(sanitizeName(e.target.value))
+                })} 
+                placeholder="John" 
+              />
+              <Input 
+                label="Last Name" 
+                value={newAdmin.lastName} 
+                onChange={e => setNewAdmin({
+                  ...newAdmin,
+                  lastName: capitalizeFirstLetter(sanitizeName(e.target.value))
+                })} 
+                placeholder="Doe" 
+              />
             </div>
-            <Input label="Middle Name (optional)" value={newAdmin.middleName} onChange={e => setNewAdmin({
-          ...newAdmin,
-          middleName: e.target.value
-        })} placeholder="Michael" />
+            <Input 
+              label="Middle Name (optional)" 
+              value={newAdmin.middleName} 
+              onChange={e => setNewAdmin({
+                ...newAdmin,
+                middleName: capitalizeFirstLetter(sanitizeName(e.target.value))
+              })} 
+              placeholder="Michael" 
+            />
 
-            <Input label="Email Address" type="email" value={newAdmin.email} onChange={e => setNewAdmin({
-          ...newAdmin,
-          email: e.target.value
-        })} required placeholder="admin@weathersmart.com" />
+            <Input label="Email Address" type="email" value={newAdmin.email} onChange={e => {
+              setNewAdmin({
+                ...newAdmin,
+                email: e.target.value
+              });
+              setEmailError('');
+            }} error={emailError} required placeholder="user@gmail.com" />
 
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Password" type="password" value={newAdmin.password} onChange={e => setNewAdmin({
-            ...newAdmin,
-            password: e.target.value
-          })} required placeholder="Strong password" />
-              <Input label="Confirm Password" type="password" value={newAdmin.confirmPassword} onChange={e => setNewAdmin({
-            ...newAdmin,
-            confirmPassword: e.target.value
-          })} required placeholder="Re-enter password" />
+              <Input 
+                label="Password" 
+                type="password" 
+                showPasswordToggle={true}
+                value={newAdmin.password} 
+                onChange={e => setNewAdmin({
+                  ...newAdmin,
+                  password: e.target.value
+                })} 
+                required 
+                placeholder="Strong password" 
+              />
+              <Input 
+                label="Confirm Password" 
+                type="password" 
+                showPasswordToggle={true}
+                value={newAdmin.confirmPassword} 
+                onChange={e => setNewAdmin({
+                  ...newAdmin,
+                  confirmPassword: e.target.value
+                })} 
+                required 
+                placeholder="Re-enter password" 
+              />
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

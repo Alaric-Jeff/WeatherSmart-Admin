@@ -61,8 +61,8 @@ export function Sidebar({
   return <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-screen shadow-xl">
       {/* Logo & Brand */}
       <div className="p-5 flex items-center space-x-3 border-b border-gray-100">
-        <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-          <CloudRain className="h-6 w-6 text-white" />
+        <div className="h-10 w-10 rounded-xl overflow-hidden shadow-lg">
+          <img src="/Iconi.png" alt="WeatherSmart Logo" className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
           <h1 className="text-base font-bold leading-tight truncate text-gray-900">
@@ -76,14 +76,16 @@ export function Sidebar({
       <div className="mx-4 mt-4 p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-100">
         <div className="flex items-center space-x-3">
           <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-md shadow-blue-200">
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
+            {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'A'}{user?.lastName?.[0]?.toUpperCase() || user?.email?.[1]?.toUpperCase() || 'D'}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900 truncate">
-              {user?.firstName} {user?.lastName}
+              {user?.firstName && user?.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user?.email?.split('@')[0] || 'Admin'}
             </p>
             <p className="text-xs text-gray-600 truncate flex items-center mt-1">
-              {isSuperAdmin && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+              {isSuperAdmin && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
                   Super Admin
                 </span>}
               {!isSuperAdmin && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
@@ -119,18 +121,18 @@ export function Sidebar({
             <div className="pt-4 pb-3">
               <div className="h-px bg-gray-200"></div>
             </div>
-            <p className="px-3 text-xs font-semibold text-amber-600 uppercase tracking-wider mb-3 flex items-center">
+            <p className="px-3 text-xs font-semibold text-blue-600 uppercase tracking-wider mb-3 flex items-center">
               <Shield className="h-3.5 w-3.5 mr-1.5" />
               Super Admin
             </p>
             {superAdminItems.map(item => <Link key={item.name} to={item.path} onClick={handleNavClick} className={`
                   group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 mb-1
                   ${isActive(item.path) 
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-200' 
-                    : 'text-gray-700 hover:bg-amber-50 hover:text-amber-700'}
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}
                 `}>
                 <div className="flex items-center min-w-0">
-                  <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive(item.path) ? 'text-white' : 'text-amber-500'}`} />
+                  <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive(item.path) ? 'text-white' : 'text-blue-600'}`} />
                   <div className="min-w-0">
                     <span className="truncate block font-medium">{item.name}</span>
                     {!isActive(item.path) && <span className="text-xs text-gray-500 truncate block">{item.description}</span>}

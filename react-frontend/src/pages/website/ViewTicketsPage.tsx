@@ -63,35 +63,35 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
     switch (status) {
       case 'Open':
         return {
-          bg: 'bg-gradient-to-br from-orange-100 to-orange-50',
-          text: 'text-orange-700',
-          border: 'border-orange-300',
-          badge: 'bg-orange-500',
-          ring: 'ring-orange-100'
-        };
-      case 'In-Progress':
-        return {
           bg: 'bg-gradient-to-br from-blue-100 to-blue-50',
           text: 'text-blue-700',
           border: 'border-blue-300',
-          badge: 'bg-blue-500',
+          badge: 'bg-red-500',
+          ring: 'ring-blue-100'
+        };
+      case 'In-Progress':
+        return {
+          bg: 'bg-gradient-to-br from-blue-50 to-white',
+          text: 'text-blue-700',
+          border: 'border-blue-200',
+          badge: 'bg-orange-500',
           ring: 'ring-blue-100'
         };
       case 'Resolved':
         return {
-          bg: 'bg-gradient-to-br from-green-100 to-green-50',
-          text: 'text-green-700',
-          border: 'border-green-300',
+          bg: 'bg-gradient-to-br from-blue-100 to-white',
+          text: 'text-blue-700',
+          border: 'border-blue-300',
           badge: 'bg-green-500',
-          ring: 'ring-green-100'
+          ring: 'ring-blue-100'
         };
       default:
         return {
-          bg: 'bg-gradient-to-br from-gray-100 to-gray-50',
-          text: 'text-gray-700',
-          border: 'border-gray-300',
-          badge: 'bg-gray-500',
-          ring: 'ring-gray-100'
+          bg: 'bg-gradient-to-br from-blue-50 to-white',
+          text: 'text-blue-700',
+          border: 'border-blue-200',
+          badge: 'bg-blue-500',
+          ring: 'ring-blue-100'
         };
     }
   };
@@ -136,7 +136,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
   };
 
   return (
-    <div className="pt-24 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <div className="pt-24 pb-16 bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <motion.div 
@@ -151,7 +151,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
                   <ListChecks className="w-7 h-7" />
                 </div>
                 {tickets.filter(t => t.status === 'Open').length > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white">
                     {tickets.filter(t => t.status === 'Open').length}
                   </div>
                 )}
@@ -174,7 +174,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 mb-6"
+          className="bg-white/70 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6 mb-6"
         >
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
@@ -196,19 +196,19 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
               {(['all', 'Open', 'In-Progress', 'Resolved'] as const).map((status) => {
                 const count = status === 'all' ? tickets.length : tickets.filter(t => t.status === status).length;
                 return (
-                  <button
+                    <button
                     key={status}
                     onClick={() => setFilter(status)}
                     className={`relative px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
                       filter === status
                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200 scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100 hover:scale-105'
                     }`}
                   >
                     <span>{status === 'all' ? 'All' : status}</span>
                     {count > 0 && (
                       <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-                        filter === status ? 'bg-white/20' : 'bg-gray-200'
+                        filter === status ? 'bg-white/20' : 'bg-blue-100 text-blue-700'
                       }`}>
                         {count}
                       </span>
@@ -222,7 +222,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
             <button
               onClick={fetchTickets}
               disabled={isLoading}
-              className="px-5 py-3 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all flex items-center gap-2 disabled:opacity-50 font-medium group"
+              className="px-5 py-3 rounded-xl bg-white border-2 border-blue-200 text-blue-700 hover:border-blue-500 hover:text-blue-600 transition-all flex items-center gap-2 disabled:opacity-50 font-medium group"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
               <span className="hidden sm:inline">Refresh</span>
@@ -243,7 +243,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center gap-3 text-red-700"
+            className="bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-center gap-3 text-blue-700"
           >
             <AlertCircle className="w-6 h-6" />
             <div>
@@ -258,7 +258,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl border-2 border-dashed border-gray-300 shadow-sm p-12 text-center"
+            className="bg-white rounded-3xl border-2 border-dashed border-blue-200 shadow-sm p-12 text-center"
           >
             <div className="inline-flex p-6 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 mb-6">
               <TicketIcon className="w-12 h-12" />
@@ -275,9 +275,9 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl border-2 border-dashed border-gray-300 shadow-sm p-12 text-center"
+            className="bg-white rounded-3xl border-2 border-dashed border-blue-200 shadow-sm p-12 text-center"
           >
-            <div className="inline-flex p-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 text-gray-400 mb-6">
+            <div className="inline-flex p-6 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 text-blue-400 mb-6">
               <Search className="w-12 h-12" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">No tickets found</h3>
@@ -310,12 +310,12 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
                     whileHover={{ scale: 1.01, y: -2 }}
-                    className="group relative"
+                    className="group relative overflow-hidden rounded-2xl"
                   >
                     {/* Status indicator bar */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors.badge} rounded-l-2xl`} />
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors.badge}`} />
                     
-                    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl transition-all overflow-hidden ml-1">
+                    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl transition-all overflow-hidden">
                       <div className="p-6">
                         {/* Header Row */}
                         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -327,16 +327,16 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
                             </div>
 
                             {/* Issue Type Badge */}
-                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-100 to-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-white border border-blue-200 rounded-xl text-sm font-medium text-blue-700">
                               {getIssueTypeIcon(ticket.issueType)}
                               <span>{ticket.issueType}</span>
                             </div>
                           </div>
 
                           {/* Ticket ID */}
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
-                            <TicketIcon className="w-3.5 h-3.5 text-gray-500" />
-                            <code className="text-xs text-gray-600 font-mono font-semibold">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                            <TicketIcon className="w-3.5 h-3.5 text-blue-500" />
+                            <code className="text-xs text-blue-700 font-mono font-semibold">
                               #{ticket.ticketId.slice(0, 12)}
                             </code>
                           </div>
@@ -351,7 +351,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
                           {/* Notes */}
                           {ticket.notes && (
                             <div className="flex gap-2 mt-3">
-                              <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                              <MessageSquare className="w-4 h-4 text-blue-300 mt-0.5 flex-shrink-0" />
                               <p className="text-gray-600 text-sm leading-relaxed">{ticket.notes}</p>
                             </div>
                           )}
@@ -371,8 +371,8 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
 
                           {ticket.updatedAt && ticket.updatedAt !== ticket.createdDate && (
                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <div className="p-1.5 rounded-lg bg-green-50">
-                                <RefreshCw className="w-4 h-4 text-green-600" />
+                              <div className="p-1.5 rounded-lg bg-blue-50">
+                                <RefreshCw className="w-4 h-4 text-blue-600" />
                               </div>
                               <div>
                                 <span className="text-xs text-gray-500">Updated</span>
@@ -404,7 +404,7 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
             transition={{ delay: 0.3 }}
             className="mt-8 grid grid-cols-1 sm:grid-cols-4 gap-4"
           >
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-2">
                 <TicketIcon className="w-8 h-8 opacity-80" />
                 <div className="text-right">
@@ -414,38 +414,38 @@ export function ViewTicketsPage({ user }: ViewTicketsPageProps) {
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-2">
                 <AlertCircle className="w-8 h-8 opacity-80" />
                 <div className="text-right">
                   <p className="text-3xl font-bold">
                     {tickets.filter(t => t.status === 'Open').length}
                   </p>
-                  <p className="text-sm text-orange-100">Open</p>
+                  <p className="text-sm text-blue-100">Open</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-2">
                 <Clock className="w-8 h-8 opacity-80" />
                 <div className="text-right">
                   <p className="text-3xl font-bold">
                     {tickets.filter(t => t.status === 'In-Progress').length}
                   </p>
-                  <p className="text-sm text-purple-100">In Progress</p>
+                  <p className="text-sm text-blue-100">In Progress</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-2">
                 <CheckCircle2 className="w-8 h-8 opacity-80" />
                 <div className="text-right">
                   <p className="text-3xl font-bold">
                     {tickets.filter(t => t.status === 'Resolved').length}
                   </p>
-                  <p className="text-sm text-green-100">Resolved</p>
+                  <p className="text-sm text-blue-100">Resolved</p>
                 </div>
               </div>
             </div>

@@ -6,6 +6,21 @@
 @import 'tailwindcss/utilities';
 /* DO NOT DELETE THESE TAILWIND IMPORTS, OTHERWISE THE STYLING WILL NOT RENDER AT ALL - DO NOT DELETE THIS COMMENT */
 
+/* Global black text cursor for all text inputs */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  caret-color: #000000;
+}
+
+/* Global black toggle/selection color (checkbox, radio, range) */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: #000000;
+}
+
 /* Custom animations for login page */
 @keyframes blob {
   0%, 100% {

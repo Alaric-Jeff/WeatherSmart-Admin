@@ -54,21 +54,21 @@ export function DashboardPage() {
       value: devicesCount,
       subtext: `${devicesCount} Assigned`,
       icon: Server,
-      color: 'bg-green-500'
+      color: 'bg-blue-600'
     },
     {
       name: 'Open Tickets',
       value: ticketsCount,
       subtext: `${ticketsCount} Total`,
       icon: Ticket,
-      color: 'bg-yellow-500'
+      color: 'bg-blue-400'
     },
     {
       name: 'System Status',
       value: '99.9%',
       subtext: 'Uptime',
       icon: Activity,
-      color: 'bg-purple-500'
+      color: 'bg-blue-700'
     }
   ];
 
@@ -79,14 +79,14 @@ export function DashboardPage() {
       value: user.role,
       subtext: `Logged in as ${user.firstName} ${user.lastName}`,
       icon: Shield,
-      color: 'bg-indigo-500'
+      color: 'bg-blue-800'
     },
     {
       name: 'System Activity',
       value: usersCount + devicesCount + ticketsCount,
       subtext: 'Total tracked actions',
       icon: TrendingUp,
-      color: 'bg-pink-500'
+      color: 'bg-blue-500'
     }
   ];
 

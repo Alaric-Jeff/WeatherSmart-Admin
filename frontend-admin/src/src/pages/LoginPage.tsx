@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { CloudRain, Mail, Eye, EyeOff, Lock } from 'lucide-react';
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const COOLDOWN_DURATION = 300; // 5 minutes in seconds
+const REMEMBER_EMAIL_KEY = 'login_remember_email';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -14,22 +17,111 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [cooldownTime, setCooldownTime] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
+  // Load failed attempts and cooldown from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('login_attempts');
+    const cooldownEnd = localStorage.getItem('login_cooldown_end');
+    const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
 
-  try {
-    const adminData = await login(email, password); 
-    console.log(adminData);
-    navigate('/dashboard'); 
-  } catch (err: any) {
-    setError(err.message || 'Failed to login');
-  } finally {
-    setIsLoading(false);
-  }
-};
+    if (stored) {
+      const attempts = JSON.parse(stored);
+      setFailedAttempts(attempts);
+    }
+
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+
+    if (cooldownEnd) {
+      const endTime = parseInt(cooldownEnd);
+      const now = Date.now();
+      if (now < endTime) {
+        setIsLocked(true);
+        setCooldownTime(Math.ceil((endTime - now) / 1000));
+      } else {
+        localStorage.removeItem('login_cooldown_end');
+        localStorage.removeItem('login_attempts');
+      }
+    }
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!isLocked || cooldownTime <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownTime(prev => {
+        if (prev <= 1) {
+          setIsLocked(false);
+          setFailedAttempts(0);
+          localStorage.removeItem('login_attempts');
+          localStorage.removeItem('login_cooldown_end');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLocked, cooldownTime]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (isLocked) {
+      setError(`Account is locked. Please try again in ${cooldownTime} seconds.`);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const adminData = await login(email, password);
+      console.log(adminData);
+      
+      // Reset on successful login
+      setFailedAttempts(0);
+      localStorage.removeItem('login_attempts');
+      localStorage.removeItem('login_cooldown_end');
+
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBER_EMAIL_KEY);
+      }
+      
+      navigate('/dashboard');
+    } catch (err: any) {
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      localStorage.setItem('login_attempts', JSON.stringify(newAttempts));
+
+      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+        // Lock account for 5 minutes
+        const cooldownEndTime = Date.now() + COOLDOWN_DURATION * 1000;
+        localStorage.setItem('login_cooldown_end', cooldownEndTime.toString());
+        setIsLocked(true);
+        setCooldownTime(COOLDOWN_DURATION);
+        setError(`Too many failed login attempts. Account locked for 5 minutes.`);
+      } else {
+        const remainingAttempts = MAX_LOGIN_ATTEMPTS - newAttempts;
+        setError(
+          `${err.message || 'Failed to login'}. ${remainingAttempts} attempt${
+            remainingAttempts !== 1 ? 's' : ''
+          } remaining.`
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   return (
@@ -43,8 +135,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center animate-fade-in-down">
-          <div className="h-20 w-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform duration-300">
-            <CloudRain className="h-12 w-12 text-white" />
+          <div className="h-20 w-20 rounded-2xl overflow-hidden shadow-2xl transform hover:scale-110 transition-transform duration-300">
+            <img src="/Iconi.png" alt="WeatherSmart Logo" className="h-full w-full object-cover" />
           </div>
         </div>
         <h2 className="mt-6 text-center text-4xl font-bold text-gray-900 animate-fade-in">
@@ -75,7 +167,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   onChange={e => setEmail(e.target.value)}
                   required
                   placeholder="admin@weathersmart.com"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-white/50"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-white text-black"
+                  style={{ caretColor: '#000000' }}
                 />
               </div>
             </div>
@@ -94,7 +187,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   onChange={e => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-white/50"
+                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-white text-black"
+                  style={{ caretColor: '#000000' }}
                 />
                 <button
                   type="button"
@@ -111,6 +205,18 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Remember me
+              </label>
+            </div>
+
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-4 rounded-lg border border-red-200 flex items-start gap-2 animate-shake">
                 <svg className="h-5 w-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -125,8 +231,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                 type="submit" 
                 className="w-full py-3 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl" 
                 isLoading={isLoading}
+                disabled={isLocked || isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLocked 
+                  ? `Locked (${cooldownTime}s)` 
+                  : isLoading 
+                  ? 'Signing in...' 
+                  : 'Sign in'}
               </Button>
             </div>
           </form>

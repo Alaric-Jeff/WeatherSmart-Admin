@@ -1,3 +1,18 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Global black text cursor for all text inputs */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+	caret-color: #000000;
+}
+
+/* Global black toggle/selection color (checkbox, radio, range) */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+	accent-color: #000000;
+}

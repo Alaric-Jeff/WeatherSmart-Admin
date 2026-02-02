@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LogIn, Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Droplets } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { LogIn, Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoginPageProps {
@@ -13,12 +13,69 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const COOLDOWN_DURATION = 300; // 5 minutes in seconds
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [cooldownTime, setCooldownTime] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
   const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+
+  useEffect(() => {
+    const stored = localStorage.getItem('login_attempts');
+    const cooldownEnd = localStorage.getItem('login_cooldown_end');
+    const rememberedEmail = localStorage.getItem('remember_user');
+
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+
+    if (stored) {
+      const attempts = JSON.parse(stored);
+      setFailedAttempts(attempts);
+    }
+
+    if (cooldownEnd) {
+      const endTime = parseInt(cooldownEnd, 10);
+      const now = Date.now();
+      if (now < endTime) {
+        setIsLocked(true);
+        setCooldownTime(Math.ceil((endTime - now) / 1000));
+      } else {
+        localStorage.removeItem('login_cooldown_end');
+        localStorage.removeItem('login_attempts');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLocked || cooldownTime <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownTime(prev => {
+        if (prev <= 1) {
+          setIsLocked(false);
+          setFailedAttempts(0);
+          localStorage.removeItem('login_attempts');
+          localStorage.removeItem('login_cooldown_end');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLocked, cooldownTime]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('submitting');
     setErrorMessage('');
+    if (isLocked) {
+      setStatus('error');
+      setErrorMessage(`Account is locked. Please try again in ${cooldownTime} seconds.`);
+      return;
+    }
+    setStatus('submitting');
     
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -37,16 +94,39 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
       if (data.user) {
         localStorage.setItem('auth_user', JSON.stringify(data.user));
       }
+      setFailedAttempts(0);
+      localStorage.removeItem('login_attempts');
+      localStorage.removeItem('login_cooldown_end');
       if (rememberMe) {
         localStorage.setItem('remember_user', email);
+      } else {
+        localStorage.removeItem('remember_user');
       }
       setStatus('success');
       setTimeout(() => {
         onLoggedIn?.(data.token, data.user);
       }, 1000);
     } catch (err) {
-      setStatus('error');
-      setErrorMessage(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      localStorage.setItem('login_attempts', JSON.stringify(newAttempts));
+
+      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+        const cooldownEndTime = Date.now() + COOLDOWN_DURATION * 1000;
+        localStorage.setItem('login_cooldown_end', cooldownEndTime.toString());
+        setIsLocked(true);
+        setCooldownTime(COOLDOWN_DURATION);
+        setStatus('error');
+        setErrorMessage('Too many failed login attempts. Account locked for 5 minutes.');
+      } else {
+        const remainingAttempts = MAX_LOGIN_ATTEMPTS - newAttempts;
+        setStatus('error');
+        setErrorMessage(
+          `${err instanceof Error ? err.message : 'Failed to login'}. ${remainingAttempts} attempt${
+            remainingAttempts !== 1 ? 's' : ''
+          } remaining.`
+        );
+      }
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
@@ -96,9 +176,9 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", duration: 0.6 }}
-                className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-4 shadow-lg shadow-blue-200"
+                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg overflow-hidden"
               >
-                <Droplets className="w-8 h-8 text-white" />
+                <img src="/Iconi.png" alt="Smart Laundry Logo" className="w-full h-full object-cover" />
               </motion.div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
               <p className="text-gray-600">Sign in to access your Smart Laundry account</p>
@@ -178,11 +258,11 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={status === 'submitting' || status === 'success'}
+                disabled={status === 'submitting' || status === 'success' || isLocked}
                 className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] shadow-lg ${
                   status === 'success'
                     ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-green-200'
-                    : status === 'submitting'
+                    : status === 'submitting' || isLocked
                     ? 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-blue-200 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-200 hover:shadow-xl'
                 }`}
@@ -200,6 +280,10 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
                   <>
                     <CheckCircle size={20} />
                     <span>Success!</span>
+                  </>
+                ) : isLocked ? (
+                  <>
+                    <span>Locked ({cooldownTime}s)</span>
                   </>
                 ) : (
                   <>

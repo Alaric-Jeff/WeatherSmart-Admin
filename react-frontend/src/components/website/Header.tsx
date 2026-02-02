@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Droplets, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 interface HeaderProps {
   currentPage: string;
@@ -68,8 +68,8 @@ export function Header({
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('home')}>
-            <div className="p-2 bg-blue-600 rounded-xl">
-              <Droplets className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md">
+              <img src="/Iconi.png" alt="Smart Laundry Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-bold text-gray-900 tracking-tight">
               Smart Laundry
